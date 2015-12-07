@@ -15171,7 +15171,8 @@
         "phase" : "solid",
         "charges" : 50,
         "bashing" : 0,
-        "fun" : -20
+        "fun" : -20,
+        "flags" : "WRITABLE"
     },
     {
         "type" : "COMESTIBLE",

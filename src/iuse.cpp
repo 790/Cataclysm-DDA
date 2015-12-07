@@ -9101,3 +9101,15 @@ int iuse::ladder( player *p, item *, bool, const tripoint& )
     g->m.furn_set( dirp, "f_ladder" );
     return 1;
 }
+
+int iuse::stocktake( player *p, item *it, bool, const tripoint& )
+{
+    p->add_msg_if_player(_("Performing stock take."));
+    return 0;
+}
+
+int iuse::stocktake_read( player *p, item *it, bool, const tripoint& )
+{
+    p->add_msg_if_player(_("Reading stock take."));
+    return 0;
+}
