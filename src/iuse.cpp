@@ -9104,22 +9104,15 @@ int iuse::ladder( player *p, item *, bool, const tripoint& )
 
 int iuse::stocktake( player *p, item *it, bool, const tripoint& )
 {
-    static const std::vector<std::string> materials = {{
-                                                               "paper"
-                                                       }};
-    int inventory_index = g->inv_for_filter( _("Write on what?"), [it]( const item &itm ) {
-        return itm.made_of_any( materials ) && itm.has_flag("WRITABLE") && &itm != it;
-    } );
-    item *writable = &( p->i_at( inventory_index ) );
-    if (writable == NULL || writable->is_null()) {
-        p->add_msg_if_player( m_info, _( "You do not have anything you can write on!" ) );
-        return 0;
-    } else if(!writable->has_flag("WRITABLE") || !writable->made_of_any(materials)) {
-        p->add_msg_if_player( m_info, _( "You cannot write on that!" ) );
-        return 0;
+    const int radius = 8;
+    std::vector<map_item_stack> items = g->find_nearby_items(radius, false);
+
+    for( map_item_stack &item : items ) {
+        p->add_msg_if_player(_(item.example->tname().c_str()));
     }
+
     p->add_msg_if_player(_("Performing stock take."));
-    return 0;
+    return it->type->charges_to_use();
 }
 
 int iuse::stocktake_read( player *p, item *it, bool, const tripoint& )

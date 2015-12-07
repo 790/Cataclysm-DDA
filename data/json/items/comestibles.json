@@ -15172,7 +15172,15 @@
         "charges" : 50,
         "bashing" : 0,
         "fun" : -20,
-        "flags" : "WRITABLE"
+        "ammo_data": {
+            "ammo_type" : "paper",
+            "damage" : 0,
+            "range" : 0,
+            "dispersion" : 0,
+            "recoil" : 0,
+            "count" : 1,
+            "effects" : []
+        }
     },
     {
         "type" : "COMESTIBLE",

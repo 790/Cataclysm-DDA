@@ -9156,7 +9156,11 @@ tripoint game::look_around( WINDOW *w_info, const tripoint &start_point,
     return tripoint( INT_MIN, INT_MIN, INT_MIN );
 }
 
-std::vector<map_item_stack> game::find_nearby_items(int iRadius)
+std::vector<map_item_stack> game::find_nearby_items(int iRadius) {
+    return find_nearby_items(iRadius, true);
+}
+
+std::vector<map_item_stack> game::find_nearby_items(int iRadius, bool los)
 {
     std::map<std::string, map_item_stack> temp_items;
     std::vector<map_item_stack> ret;
@@ -9172,8 +9176,10 @@ std::vector<map_item_stack> game::find_nearby_items(int iRadius)
 
     for( auto &points_p_it : points ) {
         if( points_p_it.y >= u.posy() - iRadius && points_p_it.y <= u.posy() + iRadius &&
-            u.sees( points_p_it ) &&
-            m.sees_some_items( points_p_it, u ) ) {
+                    (!los ||
+                            (u.sees( points_p_it ) &&
+                            m.sees_some_items( points_p_it, u ))
+                    )) {
 
             for( auto &elem : m.i_at( points_p_it ) ) {
                 const std::string name = elem.tname();

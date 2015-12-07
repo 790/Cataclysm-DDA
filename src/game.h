@@ -388,6 +388,7 @@ class game
         void print_all_tile_info( const tripoint &lp, WINDOW *w_look, int column, int &line, bool mouse_hover );
 
         std::vector<map_item_stack> find_nearby_items(int iRadius);
+        std::vector<map_item_stack> find_nearby_items(int iRadius, bool los);
         void draw_item_filter_rules(WINDOW *window, int rows);
         std::string ask_item_priority_high(WINDOW *window, int rows);
         std::string ask_item_priority_low(WINDOW *window, int rows);

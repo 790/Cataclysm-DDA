@@ -460,5 +460,11 @@
         "id" : "chemical_spray",
         "name" : "sprayable chemical",
         "default" : "gas_fungicidal"
+    },
+    {
+        "type": "ammunition_type",
+        "id": "paper",
+        "name": "paper",
+        "default": "paper"
     }
 ]
