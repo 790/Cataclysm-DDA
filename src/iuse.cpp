@@ -9108,7 +9108,7 @@ int iuse::stocktake( player *p, item *it, bool, const tripoint& )
     std::vector<map_item_stack> items = g->find_nearby_items(radius, false);
 
     for( map_item_stack &item : items ) {
-        p->add_msg_if_player(_(item.example->tname().c_str()));
+        p->add_msg_if_player(_("%s %d"), item.example->tname(item.vIG.size(), false).c_str(), item.totalcount);
     }
 
     p->add_msg_if_player(_("Performing stock take."));
