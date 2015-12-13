@@ -1347,7 +1347,7 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
 
     for ( map_item_stack &item : accessibleItems ) {
         totalItemCount += item.totalcount;
-        manifestText << item.example->tname(item.totalcount, false) << " " << item.totalcount << "\n";
+        manifestText << string_format("%5d %s", item.totalcount, item.example->tname(item.totalcount, false).c_str()) << "\n";
     }
 
     if( totalItemCount == 0 ) {
