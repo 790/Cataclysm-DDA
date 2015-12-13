@@ -1288,4 +1288,43 @@ void activity_handlers::open_gate_finish( player_activity *act, player *p )
     }
 }
 
+void activity_handlers::stocktake_finish( player_activity *act, player *p )
+{
+    const int radius = 8;
+    std::vector<map_item_stack> items = g->find_nearby_items(radius, false);
 
+    int totalItemCount = 0;
+    std::ostringstream manifestText;
+    manifestText << "Manifest";
+    manifestText << " - "<<string_format("Day %d", (calendar::turn.days() + 1));
+    if( p->has_watch() ) {
+        manifestText << " " << calendar::turn.print_time().c_str();
+    };
+    manifestText << "\n--------\n";
+
+    for( map_item_stack &item : items ) {
+
+        p->add_msg_if_player(_("%s %d"), item.example->tname(item.totalcount, false).c_str(), item.totalcount);
+        totalItemCount += item.totalcount;
+        manifestText << item.example->tname(item.totalcount, false) << " " << item.totalcount << "\n";
+    }
+
+    if( totalItemCount == 0 ) {
+        p->add_msg_if_player(_("Stocktake complete. Found no items."));
+        return;
+    } else {
+        std::string manifestName = "";
+        manifestName = string_input_popup(_("Name manifest?"), 64);
+        if(manifestName.length() == 0) {
+            manifestName = "manifest";
+        } else {
+            manifestName = "manifest - "+manifestName;
+        }
+        item manifest("note", 0, false);
+        manifest.set_var("name", manifestName);
+        manifest.set_var("description", manifestText.str());
+        p->inv.push_back(manifest);
+
+        p->add_msg_if_player(m_good, _("Stocktake complete. Catalogued %d items."), totalItemCount);
+    }
+}

@@ -9200,36 +9200,14 @@ int iuse::ladder( player *p, item *, bool, const tripoint& )
 
 int iuse::stocktake( player *p, item *it, bool, const tripoint& )
 {
-    const int radius = 8;
-    std::vector<map_item_stack> items = g->find_nearby_items(radius, false);
-
-    int totalItemCount = 0;
-    std::ostringstream manifestText;
-    manifestText << "Manifest\n--------\n";
-    for( map_item_stack &item : items ) {
-
-        p->add_msg_if_player(_("%s %d"), item.example->tname(item.totalcount, false).c_str(), item.totalcount);
-        totalItemCount += item.totalcount;
-        manifestText << item.example->tname(item.totalcount, false) << " " << item.totalcount << "\n";
-    }
-
-    if(totalItemCount == 0) {
-        p->add_msg_if_player(_("Stock take complete. Found no items."));
-        return 0;
-    } else {
-        item manifest("note", 0, false);
-        manifest.set_var("name", "A manifest");
-        manifest.set_var("description", manifestText.str());
-        p->inv.push_back(manifest);
-
-        p->add_msg_if_player(_("Stock take complete. Catalogued %d items."), totalItemCount);
-    }
-
+    p->add_msg_if_player("Performing stocktake.");
+    p->assign_activity(ACT_STOCKTAKE, 30000);
     return it->type->charges_to_use();
 }
 
 int iuse::stocktake_read( player *p, item *it, bool, const tripoint& )
 {
     p->add_msg_if_player(_("Reading stock take."));
+    popup(it->get_var("description").c_str());
     return 0;
 }
