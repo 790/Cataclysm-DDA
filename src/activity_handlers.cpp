@@ -1291,6 +1291,8 @@ void activity_handlers::open_gate_finish( player_activity *act, player *p )
 void activity_handlers::stocktake_finish( player_activity *act, player *p )
 {
     const int radius = 8;
+    item *it = &p->i_at(act->position);
+
     std::vector<map_item_stack> items = g->find_nearby_items(radius, false);
 
     int totalItemCount = 0;
@@ -1336,11 +1338,13 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
             accessibleItems.push_back(item);
         }
     }
+
+    /* Sort alphabetically */
     std::sort(accessibleItems.begin(), accessibleItems.end(),
               [](map_item_stack a, map_item_stack b) { return a.example->tname(a.totalcount, false) < b.example->tname(b.totalcount, false); }
     );
+
     for ( map_item_stack &item : accessibleItems ) {
-        p->add_msg_if_player(_("%s %d"), item.example->tname(item.totalcount, false).c_str(), item.totalcount);
         totalItemCount += item.totalcount;
         manifestText << item.example->tname(item.totalcount, false) << " " << item.totalcount << "\n";
     }
@@ -1359,5 +1363,7 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
         p->inv.push_back(manifest);
 
         p->add_msg_if_player(m_good, _("Stocktake complete. Catalogued %d items."), totalItemCount);
+
+        it->charges -= it->type->charges_to_use();
     }
 }
