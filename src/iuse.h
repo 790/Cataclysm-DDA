@@ -202,7 +202,7 @@ public:
     int weather_tool        ( player*, item*, bool, const tripoint& );
     int ladder              ( player*, item*, bool, const tripoint& );
     int stocktake           ( player*, item*, bool, const tripoint& );
-    int stocktake_read      ( player*, item*, bool, const tripoint& );
+    int manifest_read      ( player*, item*, bool, const tripoint& );
 
 // MACGUFFINS
     int mcg_note            ( player*, item*, bool, const tripoint& );

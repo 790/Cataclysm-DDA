@@ -9200,14 +9200,17 @@ int iuse::ladder( player *p, item *, bool, const tripoint& )
 
 int iuse::stocktake( player *p, item *it, bool, const tripoint& )
 {
+    int radius = 8;
     p->add_msg_if_player("Performing stocktake.");
-    p->assign_activity(ACT_STOCKTAKE, 30000, 0, p->get_item_position(it), it->tname());
+
+    /* 3000 turns for each square */
+    p->assign_activity(ACT_STOCKTAKE, 3000*radius*radius, 0, p->get_item_position(it), it->tname());
+    p->activity.values.push_back(radius);
     return 0;
 }
 
-int iuse::stocktake_read( player *p, item *it, bool, const tripoint& )
+int iuse::manifest_read( player *, item *it, bool, const tripoint& )
 {
-    p->add_msg_if_player(_("Reading stock take."));
     popup(it->get_var("description").c_str());
     return 0;
 }

@@ -1290,7 +1290,7 @@ void activity_handlers::open_gate_finish( player_activity *act, player *p )
 
 void activity_handlers::stocktake_finish( player_activity *act, player *p )
 {
-    const int radius = 8;
+    int radius = act->values[0];
     item *it = &p->i_at(act->position);
 
     std::vector<map_item_stack> items = g->find_nearby_items(radius, false);
@@ -1308,11 +1308,12 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
     for( map_item_stack &item : items ) {
         /* Do a pathfinding check to make sure items can be accessed */
         for ( auto i : item.vIG ) {
+
             /* i.pos is relative so get the absolute coordinates */
             tripoint itemPos = playerPos + i.pos;
 
             /* If the item is furniture container, check adjacent spaces */
-            if( g->m.has_furn(itemPos) ) {
+            if( g->m.has_furn(itemPos) && g->m.has_flag_ter_or_furn( "CONTAINER", itemPos ) && !g->m.has_flag_ter_or_furn( "SEALED", itemPos )) {
                 const signed char cx[4] = {0, -1, 0, 1};
                 const signed char cy[4] = {-1, 0, 1, 0};
 
@@ -1321,7 +1322,7 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
                     const int adj_x = itemPos.x + cx[j];
                     const int adj_y = itemPos.y + cy[j];
                     tripoint adjPos = tripoint(adj_x, adj_y, itemPos.z);
-                    if (g->m.route(playerPos, adjPos, 0, 100).size()>0) {
+                    if (g->m.route(playerPos, adjPos, 0, radius*2).size()>0) {
                         pathableAdjacent = true;
                         break;
                     }
@@ -1330,7 +1331,7 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
                     item.totalcount -= i.count;
                 }
             }
-            else if(g->m.route(playerPos, itemPos, 0, 100).size()==0) {
+            else if(playerPos != itemPos && g->m.route(playerPos, itemPos, 0, radius*2).size()==0) {
                 item.totalcount -= i.count;
             }
         }

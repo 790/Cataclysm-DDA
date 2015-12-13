@@ -60,7 +60,7 @@
         "bashing" : 0,
         "cutting" : 0,
         "price" : 0,
-        "use_action": "STOCKTAKE_READ",
+        "use_action": "MANIFEST_READ",
         "book_data" : {
             "max_level" : 0,
             "intelligence" : 0,
@@ -69,7 +69,7 @@
             "skill" : "none",
             "required_level" : 0,
             "chapters": 0,
-            "use_action": "STOCKTAKE_READ"
+            "use_action": "MANIFEST_READ"
         }
     },
     {
