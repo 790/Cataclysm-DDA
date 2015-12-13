@@ -1301,9 +1301,45 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
         manifestText << " " << calendar::turn.print_time().c_str();
     };
     manifestText << "\n--------\n";
-
+    std::vector<map_item_stack> accessibleItems;
+    tripoint playerPos = p->pos();
     for( map_item_stack &item : items ) {
+        /* Do a pathfinding check to make sure items can be accessed */
+        for ( auto i : item.vIG ) {
+            /* i.pos is relative so get the absolute coordinates */
+            tripoint itemPos = playerPos + i.pos;
 
+            /* If the item is furniture container, check adjacent spaces */
+            if( g->m.has_furn(itemPos) ) {
+                const signed char cx[4] = {0, -1, 0, 1};
+                const signed char cy[4] = {-1, 0, 1, 0};
+
+                bool pathableAdjacent = false;
+                for (int j = 0; j < 4; j++) {
+                    const int adj_x = itemPos.x + cx[j];
+                    const int adj_y = itemPos.y + cy[j];
+                    tripoint adjPos = tripoint(adj_x, adj_y, itemPos.z);
+                    if (g->m.route(playerPos, adjPos, 0, 100).size()>0) {
+                        pathableAdjacent = true;
+                        break;
+                    }
+                }
+                if(!pathableAdjacent) {
+                    item.totalcount -= i.count;
+                }
+            }
+            else if(g->m.route(playerPos, itemPos, 0, 100).size()==0) {
+                item.totalcount -= i.count;
+            }
+        }
+        if(item.totalcount>0) {
+            accessibleItems.push_back(item);
+        }
+    }
+    std::sort(accessibleItems.begin(), accessibleItems.end(),
+              [](map_item_stack a, map_item_stack b) { return a.example->tname(a.totalcount, false) < b.example->tname(b.totalcount, false); }
+    );
+    for ( map_item_stack &item : accessibleItems ) {
         p->add_msg_if_player(_("%s %d"), item.example->tname(item.totalcount, false).c_str(), item.totalcount);
         totalItemCount += item.totalcount;
         manifestText << item.example->tname(item.totalcount, false) << " " << item.totalcount << "\n";
@@ -1315,13 +1351,10 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
     } else {
         std::string manifestName = "";
         manifestName = string_input_popup(_("Name manifest?"), 64);
-        if(manifestName.length() == 0) {
-            manifestName = "manifest";
-        } else {
-            manifestName = "manifest - "+manifestName;
+        item manifest("manifest", 0, false);
+        if(manifestName.length() > 0) {
+            manifest.set_var("name", "manifest - "+manifestName);
         }
-        item manifest("note", 0, false);
-        manifest.set_var("name", manifestName);
         manifest.set_var("description", manifestText.str());
         p->inv.push_back(manifest);
 

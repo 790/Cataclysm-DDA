@@ -11210,16 +11210,6 @@
     "charges_per_use": 1,
     "turns_per_charge": 0,
     "revert_to": "null",
-    "use_action": "STOCKTAKE",
-    "book_data": {
-      "use_action" : "STOCKTAKE_READ",
-      "max_level" : 0,
-      "intelligence" : 0,
-      "time" : 10,
-      "fun" : 0,
-      "skill" : "none",
-      "required_level" : 0,
-      "chapters": 0
-    }
+    "use_action": "STOCKTAKE"
   }
 ]
