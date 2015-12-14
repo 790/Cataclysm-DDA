@@ -194,11 +194,11 @@ void activity_handlers::butcher_finish( player_activity *act, player *p )
 
     auto roll_butchery = [&] () {
         double skill_shift = 0.0;
-        ///\xrefitem Skill_Effects_Survival "" "" Survival above 3 randomly increases Butcher rolls, below 3 decreases
+        ///\EFFECT_SURVIVAL randomly increases butcher rolls, slightly
         skill_shift += rng_float( 0, skill_level - 3 );
-        ///\xrefitem Stat_Effects_Dexterity "" "" Dexterity above 8 randomly increases Butcher rolls, slightly, below 8 decreases
+        ///\EFFECT_DEX >8 randomly increases butcher rolls, slightly, <8 decreases
         skill_shift += rng_float( 0, p->dex_cur - 8 ) / 4.0;
-        ///\xrefitem Stat_Effects_Strength "" "" Strength below 4 randomly decreases Butcher rolls, slightly
+        ///\EFFECT_STR >4 randomly increases butcher rolls, <4 decreases
         if( p->str_cur < 4 ) {
             skill_shift -= rng_float( 0, 5 * ( 4 - p->str_cur ) ) / 4.0;
         }
@@ -452,7 +452,7 @@ void activity_handlers::firstaid_finish( player_activity *act, player *p )
 // fish-with-rod fish catching function.
 static void rod_fish( player *p, int sSkillLevel, int fishChance )
 {
-    if( sSkillLevel > fishChance ) {
+   if( sSkillLevel > fishChance ) {
         std::vector<monster *> fishables = g->get_fishable(60); //get the nearby fish list.
         //if the vector is empty (no fish around) the player is still given a small chance to get a (let us say it was hidden) fish
         if( fishables.size() < 1 ) {
@@ -488,6 +488,7 @@ void activity_handlers::fish_finish( player_activity *act, player *p )
         sSkillLevel = p->skillLevel( skill_survival ) * 1.5 + dice(1, 6) + 3;
         fishChance = dice(1, 20);
     }
+    ///\EFFECT_SURVIVAL increases chance of fishing success
     rod_fish( p, sSkillLevel, fishChance );
     p->practice( skill_survival, rng(5, 15) );
     act->type = ACT_NULL;
@@ -523,6 +524,9 @@ void activity_handlers::forage_finish( player_activity *act, player *p )
 
     // Survival gives a bigger boost, and Peception is leveled a bit.
     // Both survival and perception affect time to forage
+    ///\EFFECT_SURVIVAL increases forage success chance
+
+    ///\EFFECT_PER slightly increases forage success chance
     if( veggy_chance < p->skillLevel( skill_survival ) * 3 + p->per_cur - 2 ) {
         const auto dropped = g->m.put_items_from_loc( loc, p->pos(), calendar::turn );
         for( const auto &it : dropped ) {
@@ -543,9 +547,9 @@ void activity_handlers::forage_finish( player_activity *act, player *p )
         add_msg(_("You didn't find anything."));
     }
 
-    ///\xrefitem Stat_Effects_Intelligence "" "" Intelligence caps survival skill gains from foraging
-    // Intelligence limits the forage exp gain
+    ///\EFFECT_INT Intelligence caps survival skill gains from foraging
     const int max_forage_skill = p->int_cur / 3 + 1;
+    ///\EFFECT_SURVIVAL decreases survival skill gain from foraging (NEGATIVE)
     const int max_exp = 2 * ( max_forage_skill - p->skillLevel( skill_survival ) );
     // Award experience for foraging attempt regardless of success
     p->practice( skill_survival, rng(1, max_exp), max_forage_skill );
@@ -782,10 +786,10 @@ void activity_handlers::pulp_do_turn( player_activity *act, player *p )
     if( p->weapon.has_flag("STAB") || p->weapon.has_flag("SPEAR") ) {
         cut_power /= 2;
     }
-    ///\xrefitem Stat_Effects_Strength "" "" Strength increases pulping power, with diminishing returns
+    ///\EFFECT_STR increases pulping power, with diminishing returns
     double pulp_power = sqrt((double)(p->str_cur + p->weapon.type->melee_dam)) *
         std::min(1.0, sqrt((double)(cut_power + 1)));
-    ///\xrefitem Stat_Effects_Strength "" "" Strength caps pulping power
+    ///\EFFECT_STR caps pulping power
     pulp_power = std::min(pulp_power, (double)p->str_cur);
     pulp_power *= 20; // constant multiplier to get the chance right
     int moves = 0;
@@ -1284,4 +1288,83 @@ void activity_handlers::open_gate_finish( player_activity *act, player *p )
     }
 }
 
+void activity_handlers::stocktake_finish( player_activity *act, player *p )
+{
+    int radius = act->values[0];
+    item *it = &p->i_at(act->position);
 
+    std::vector<map_item_stack> items = g->find_nearby_items(radius, false);
+
+    int totalItemCount = 0;
+    std::ostringstream manifestText;
+    manifestText << "Manifest";
+    manifestText << " - "<<string_format("Day %d", (calendar::turn.days() + 1));
+    if( p->has_watch() ) {
+        manifestText << " " << calendar::turn.print_time().c_str();
+    };
+    manifestText << "\n--------\n";
+    std::vector<map_item_stack> accessibleItems;
+    tripoint playerPos = p->pos();
+    for( map_item_stack &item : items ) {
+        /* Do a pathfinding check to make sure items can be accessed */
+        for ( auto i : item.vIG ) {
+
+            /* i.pos is relative so get the absolute coordinates */
+            tripoint itemPos = playerPos + i.pos;
+
+            /* If the item is furniture container, check adjacent spaces */
+            if( g->m.has_furn(itemPos) && g->m.has_flag_ter_or_furn( "CONTAINER", itemPos ) && !g->m.has_flag_ter_or_furn( "SEALED", itemPos )) {
+                const signed char cx[4] = {0, -1, 0, 1};
+                const signed char cy[4] = {-1, 0, 1, 0};
+
+                bool pathableAdjacent = false;
+                for (int j = 0; j < 4; j++) {
+                    const int adj_x = itemPos.x + cx[j];
+                    const int adj_y = itemPos.y + cy[j];
+                    tripoint adjPos = tripoint(adj_x, adj_y, itemPos.z);
+                    if (g->m.route(playerPos, adjPos, 0, radius*2).size()>0) {
+                        pathableAdjacent = true;
+                        break;
+                    }
+                }
+                if(!pathableAdjacent) {
+                    item.totalcount -= i.count;
+                }
+            }
+            else if(playerPos != itemPos && g->m.route(playerPos, itemPos, 0, radius*2).size()==0) {
+                item.totalcount -= i.count;
+            }
+        }
+        if(item.totalcount>0) {
+            accessibleItems.push_back(item);
+        }
+    }
+
+    /* Sort alphabetically */
+    std::sort(accessibleItems.begin(), accessibleItems.end(),
+              [](map_item_stack a, map_item_stack b) { return a.example->tname(a.totalcount, false) < b.example->tname(b.totalcount, false); }
+    );
+
+    for ( map_item_stack &item : accessibleItems ) {
+        totalItemCount += item.totalcount;
+        manifestText << item.example->tname(item.totalcount, false) << " " << item.totalcount << "\n";
+    }
+
+    if( totalItemCount == 0 ) {
+        p->add_msg_if_player(_("Stocktake complete. Found no items."));
+        return;
+    } else {
+        std::string manifestName = "";
+        manifestName = string_input_popup(_("Name manifest?"), 64);
+        item manifest("manifest", 0, false);
+        if(manifestName.length() > 0) {
+            manifest.set_var("name", "manifest - "+manifestName);
+        }
+        manifest.set_var("description", manifestText.str());
+        p->inv.push_back(manifest);
+
+        p->add_msg_if_player(m_good, _("Stocktake complete. Catalogued %d items."), totalItemCount);
+
+        it->charges -= it->type->charges_to_use();
+    }
+}

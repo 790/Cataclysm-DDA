@@ -84,6 +84,7 @@ bool player_activity::is_abortable() const
         case ACT_START_ENGINES:
         case ACT_OXYTORCH:
         case ACT_CRACKING:
+        case ACT_STOCKTAKE:
             return true;
         default:
             return false;
@@ -283,6 +284,15 @@ void player_activity::do_turn( player *p )
                 moves_left = 0;
             }
             p->practice( skill_id( "mechanics" ), 1 );
+        case ACT_STOCKTAKE:
+            if (p->moves <= moves_left) {
+                moves_left -= p->moves;
+                p->moves = 0;
+            } else {
+                p->moves -= moves_left;
+                moves_left = 0;
+            }
+            break;
         default:
             // Based on speed, not time
             if( p->moves <= moves_left ) {
@@ -420,6 +430,10 @@ void player_activity::finish( player *p )
             break;
         case ACT_CRACKING:
             activity_handlers::cracking_finish( this, p);
+            type = ACT_NULL;
+            break;
+        case ACT_STOCKTAKE:
+            activity_handlers::stocktake_finish( this, p);
             type = ACT_NULL;
             break;
         default:
