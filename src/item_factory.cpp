@@ -298,8 +298,7 @@ void Item_factory::init()
     iuse_function_list["WEATHER_TOOL"] = &iuse::weather_tool;
     iuse_function_list["REMOVE_ALL_MODS"] = &iuse::remove_all_mods;
     iuse_function_list["LADDER"] = &iuse::ladder;
-    iuse_function_list["STOCKTAKE"] = &iuse::stocktake;
-    iuse_function_list["MANIFEST_READ"] = &iuse::manifest_read;
+    iuse_function_list["CREATE_MANIFEST"] = &iuse::create_manifest;
 
     // MACGUFFINS
     iuse_function_list["MCG_NOTE"] = &iuse::mcg_note;

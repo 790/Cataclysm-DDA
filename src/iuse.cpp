@@ -9198,19 +9198,37 @@ int iuse::ladder( player *p, item *, bool, const tripoint& )
     return 1;
 }
 
-int iuse::stocktake( player *p, item *it, bool, const tripoint& )
+int iuse::create_manifest( player *p, item *it, bool, const tripoint& )
 {
     int radius = 8;
-    p->add_msg_if_player("Performing stocktake.");
+    if( p->has_trait("ILLITERATE") ) {
+        p->add_msg_if_player(_("You do not know how to read or write."));
+        return 0;
+    }
+    p->add_msg_if_player("Creating an inventory manifest.");
 
     /* 3000 turns for each square */
-    p->assign_activity(ACT_STOCKTAKE, 3000*radius*radius, 0, p->get_item_position(it), it->tname());
+    p->assign_activity(ACT_CREATE_MANIFEST, 3000*radius*radius, 0, p->get_item_position(it), it->tname());
     p->activity.values.push_back(radius);
     return 0;
 }
 
 int iuse::manifest_read( player *, item *it, bool, const tripoint& )
 {
-    popup(it->get_var("description").c_str());
+    WINDOW *w = newwin(FULL_SCREEN_HEIGHT, FULL_SCREEN_WIDTH,
+                       std::max(0, (TERMY - FULL_SCREEN_HEIGHT) / 2),
+                       std::max(0, (TERMX - FULL_SCREEN_WIDTH) / 2));
+    std::vector<std::string> data;
+
+    std::stringstream buffer(it->get_var("manifestdata"));
+    if(buffer != NULL) {
+        std::string temp;
+        while(std::getline(buffer, temp, '\n')) {
+            data.push_back(temp);
+        }
+    }
+
+    display_table(w, it->get_var("name"), 1, data);
+
     return 0;
 }

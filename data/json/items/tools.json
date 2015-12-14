@@ -11210,6 +11210,6 @@
     "charges_per_use": 1,
     "turns_per_charge": 0,
     "revert_to": "null",
-    "use_action": "STOCKTAKE"
+    "use_action": "CREATE_MANIFEST"
   }
 ]

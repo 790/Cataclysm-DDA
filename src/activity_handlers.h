@@ -33,7 +33,7 @@ void oxytorch_do_turn( player_activity *act, player *p );
 void oxytorch_finish( player_activity *act, player *p );
 void cracking_finish( player_activity *act, player *p );
 void open_gate_finish( player_activity *act, player *p );
-void stocktake_finish( player_activity *act, player *p );
+void create_manifest_finish( player_activity *act, player *p );
 }
 
 #endif
