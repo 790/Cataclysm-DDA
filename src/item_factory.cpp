@@ -299,6 +299,7 @@ void Item_factory::init()
     iuse_function_list["REMOVE_ALL_MODS"] = &iuse::remove_all_mods;
     iuse_function_list["LADDER"] = &iuse::ladder;
     iuse_function_list["CREATE_MANIFEST"] = &iuse::create_manifest;
+    iuse_function_list["MANIFEST_READ"] = &iuse::manifest_read;
 
     // MACGUFFINS
     iuse_function_list["MCG_NOTE"] = &iuse::mcg_note;
