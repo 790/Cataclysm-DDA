@@ -1288,7 +1288,7 @@ void activity_handlers::open_gate_finish( player_activity *act, player *p )
     }
 }
 
-void activity_handlers::stocktake_finish( player_activity *act, player *p )
+void activity_handlers::create_manifest_finish( player_activity *act, player *p )
 {
     int radius = act->values[0];
     item *it = &p->i_at(act->position);
@@ -1296,13 +1296,11 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
     std::vector<map_item_stack> items = g->find_nearby_items(radius, false);
 
     int totalItemCount = 0;
-    std::ostringstream manifestText;
-    manifestText << "Manifest";
-    manifestText << " - "<<string_format("Day %d", (calendar::turn.days() + 1));
+    std::ostringstream manifestDesc(it->get_var("description"));
+    manifestDesc << "\nIt is dated: "<<string_format("Day %d", (calendar::turn.days() + 1));
     if( p->has_watch() ) {
-        manifestText << " " << calendar::turn.print_time().c_str();
+        manifestDesc << " " << calendar::turn.print_time().c_str();
     };
-    manifestText << "\n--------\n";
     std::vector<map_item_stack> accessibleItems;
     tripoint playerPos = p->pos();
     for( map_item_stack &item : items ) {
@@ -1342,12 +1340,23 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
 
     /* Sort alphabetically */
     std::sort(accessibleItems.begin(), accessibleItems.end(),
-              [](map_item_stack a, map_item_stack b) { return a.example->tname(a.totalcount, false) < b.example->tname(b.totalcount, false); }
+              [](map_item_stack a, map_item_stack b) {
+                  std::string aname = a.example->tname(a.totalcount, false);
+                  std::string bname = b.example->tname(b.totalcount, false);
+                  std::transform(aname.begin(), aname.end(), aname.begin(), tolower);
+                  std::transform(bname.begin(), bname.end(), bname.begin(), tolower);
+                  return aname < bname;
+              }
     );
-
+    std::ostringstream manifestData;
     for ( map_item_stack &item : accessibleItems ) {
         totalItemCount += item.totalcount;
-        manifestText << item.example->tname(item.totalcount, false) << " " << item.totalcount << "\n";
+        if(item.totalcount > 9999) {
+            manifestData << string_format(">9999 %s", item.example->tname(item.totalcount, false).c_str()) << "\n";
+        }
+        else {
+            manifestData << string_format("%5d %s", item.totalcount, item.example->tname(item.totalcount, false).c_str()) << "\n";
+        }
     }
 
     if( totalItemCount == 0 ) {
@@ -1360,7 +1369,8 @@ void activity_handlers::stocktake_finish( player_activity *act, player *p )
         if(manifestName.length() > 0) {
             manifest.set_var("name", "manifest - "+manifestName);
         }
-        manifest.set_var("description", manifestText.str());
+        manifest.set_var("description", manifestDesc.str());
+        manifest.set_var("manifestdata", manifestData.str());
         p->inv.push_back(manifest);
 
         p->add_msg_if_player(m_good, _("Stocktake complete. Catalogued %d items."), totalItemCount);

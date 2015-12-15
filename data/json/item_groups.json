@@ -4733,7 +4733,8 @@
       ["holybook_kallisti", 1],
       ["holybook_scientology", 1],
       ["recipe_medicalmut", 1],
-      ["survnote", 1]
+      ["survnote", 1],
+      ["clipboard", 30]
     ]
   },{
     "type" : "item_group",
@@ -4891,7 +4892,8 @@
       ["sf_watch", 1],
       ["survnote", 1],
       ["magnifying_glass", 8],
-      ["camera_control", 2]
+      ["camera_control", 2],
+      ["clipboard", 20]
     ]
   },{
     "type" : "item_group",
@@ -4987,7 +4989,8 @@
       ["sm_extinguisher", 10],
       ["pocketwatch", 2],
       ["knitting_needles", 1],
-      ["survnote", 1]
+      ["survnote", 1],
+      ["clipboard", 20]
     ]
   },{
     "type" : "item_group",
@@ -5144,7 +5147,8 @@
       ["survnote", 3],
       ["radio_car_box", 3],
       ["radiocontrol", 10],
-      ["scots_cookbook", 1]
+      ["scots_cookbook", 1],
+      ["clipboard", 10]
     ]
   },{
     "type" : "item_group",
@@ -6524,7 +6528,8 @@
       ["magnifying_glass", 2],
       ["thermometer", 3],
       ["hygrometer", 3],
-      ["barometer", 3]
+      ["barometer", 3],
+      ["clipboard", 10]
     ]
   },{
     "type" : "item_group",
@@ -10344,7 +10349,8 @@
       ["string_6", 50],
       ["scissors", 20],
       ["emergency_book", 20],
-      ["survnote", 1]
+      ["survnote", 1],
+      ["clipboard", 15]
     ]
   },{
     "type" : "item_group",

@@ -51,7 +51,8 @@ const std::string &player_activity::get_stop_phrase() const
         _(" Stop working the winch?"), _(" Stop filling the container?"),
         _(" Stop hotwiring the vehicle?"), _(" Stop aiming?"),
         _(" Stop using the ATM?"), _(" Stop trying to start the vehicle?"),
-        _(" Stop welding?")
+        _(" Stop welding?"), _(" Stop cracking?"),
+        _(" Stop creating manifest?")
     };
     return stop_phrase[type];
 }
@@ -84,7 +85,7 @@ bool player_activity::is_abortable() const
         case ACT_START_ENGINES:
         case ACT_OXYTORCH:
         case ACT_CRACKING:
-        case ACT_STOCKTAKE:
+        case ACT_CREATE_MANIFEST:
             return true;
         default:
             return false;
@@ -284,7 +285,7 @@ void player_activity::do_turn( player *p )
                 moves_left = 0;
             }
             p->practice( skill_id( "mechanics" ), 1 );
-        case ACT_STOCKTAKE:
+        case ACT_CREATE_MANIFEST:
             if (p->moves <= moves_left) {
                 moves_left -= p->moves;
                 p->moves = 0;
@@ -432,8 +433,8 @@ void player_activity::finish( player *p )
             activity_handlers::cracking_finish( this, p);
             type = ACT_NULL;
             break;
-        case ACT_STOCKTAKE:
-            activity_handlers::stocktake_finish( this, p);
+        case ACT_CREATE_MANIFEST:
+            activity_handlers::create_manifest_finish( this, p);
             type = ACT_NULL;
             break;
         default:
