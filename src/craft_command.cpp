@@ -8,6 +8,7 @@
 #include "output.h"
 #include "player.h"
 #include "translations.h"
+#include "crafting.h"
 
 #include <list>
 #include <sstream>
@@ -40,7 +41,7 @@ void craft_command::execute()
 
     bool need_selections = true;
     inventory map_inv;
-    map_inv.form_from_map( crafter->pos3(), PICKUP_RANGE );
+    map_inv.form_from_map( crafter->pos(), PICKUP_RANGE );
 
     if( has_cached_selections() ) {
         std::vector<comp_selection<item_comp>> missing_items = check_item_components_missing( map_inv );
@@ -56,7 +57,7 @@ void craft_command::execute()
 
     if( need_selections ) {
         item_selections.clear();
-        for( const auto &it : rec->requirements.components ) {
+        for( const auto &it : rec->requirements.get_components() ) {
             comp_selection<item_comp> is = crafter->select_item_component( it, batch_size, map_inv, true );
             if( is.use_from == cancel ) {
                 return;
@@ -65,7 +66,7 @@ void craft_command::execute()
         }
 
         tool_selections.clear();
-        for( const auto &it : rec->requirements.tools ) {
+        for( const auto &it : rec->requirements.get_tools() ) {
             comp_selection<tool_comp> ts = crafter->select_tool_component(
                                                it, batch_size, map_inv, DEFAULT_HOTKEYS, true );
             if( ts.use_from == cancel ) {
@@ -76,11 +77,11 @@ void craft_command::execute()
     }
 
     crafter->assign_activity( is_long ? ACT_LONGCRAFT : ACT_CRAFT, rec->batch_time( batch_size ),
-                              rec->id );
+                              -1, INT_MIN, rec->ident() );
     crafter->activity.values.push_back( batch_size );
     /* legacy support for lua bindings to last_batch and lastrecipe */
     crafter->last_batch = batch_size;
-    crafter->lastrecipe = rec->ident;
+    crafter->lastrecipe = rec->ident();
 }
 
 /** Does a string join with ', ' of the components in the passed vector and inserts into 'str' */

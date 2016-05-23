@@ -19,7 +19,6 @@
 #define STATUS_HEIGHT 4
 #define STATUS_WIDTH 55
 
-#define LONG_RANGE 10
 #define BLINK_SPEED 300
 #define EXPLOSION_MULTIPLIER 7
 
@@ -56,8 +55,34 @@
 #define OVERMAP_LAYERS (1 + OVERMAP_DEPTH + OVERMAP_HEIGHT)
 
 /** Base move cost (before modifiers) per unit volume when handling items */
-#define VOLUME_MOVE_COST 10
+#define VOLUME_MOVE_COST 20
 /** Maximum move cost when handling an item */
 #define MAX_HANDLING_COST 800
+/** Factor for item handling costs when item found in inventory */
+#define INVENTORY_HANDLING_FACTOR 3
+/** Factor for item handling costs when item found on map tile */
+#define MAP_HANDLING_FACTOR 5
+/** Factor for item handling costs when item found in vehicle */
+#define VEHICLE_HANDLING_FACTOR 4
+
+/** Minimum amount of damage to an item (state of maximum repair) */
+#define MIN_ITEM_DAMAGE -1
+/** Maximum amount of damage to an item (state before destroyed) */
+#define MAX_ITEM_DAMAGE 4
+
+/** Amount of damage which a corpse is considered pulped */
+#define CORPSE_PULP_THRESHOLD 4
+
+/** Amount by which to charge an item for each unit of plutonium cell */
+#define PLUTONIUM_CHARGES 500
+
+///\EFFECT_STR allows lifting of heavier objects */
+#define STR_LIFT_FACTOR 50000 // 50kg/STR @todo revert to 10kg/STR
+
+/** Weight per level of LIFT/JACK tool quality */
+#define TOOL_LIFT_FACTOR 500000 // 500kg/level
+
+/** Maximum density of a map field */
+#define MAX_FIELD_DENSITY 3
 
 #endif

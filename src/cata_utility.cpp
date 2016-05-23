@@ -6,6 +6,9 @@
 #include "item.h"
 #include "creature.h"
 #include "translations.h"
+#include "debug.h"
+#include "mapsharing.h"
+#include "output.h"
 
 #include <algorithm>
 
@@ -37,7 +40,7 @@ bool list_items_match( const item *item, std::string sPattern )
 
         std::string namepat = pat;
         std::transform( namepat.begin(), namepat.end(), namepat.begin(), tolower );
-        if( lcmatch( item->tname(), namepat ) ) {
+        if( lcmatch( remove_color_tags( item->tname() ), namepat ) ) {
             return !exclude;
         }
 
@@ -193,10 +196,16 @@ double logarithmic_range( int min, int max, int pos )
     const double LOGI_MIN = logarithmic( -LOGI_CUTOFF );
     const double LOGI_MAX = logarithmic( +LOGI_CUTOFF );
     const double LOGI_RANGE = LOGI_MAX - LOGI_MIN;
-    // Anything beyond [min,max] gets clamped.
-    if( pos < min ) {
+
+    if( min >= max ) {
+        debugmsg( "Invalid interval (%d, %d).", min, max );
+        return 0.0;
+    }
+
+    // Anything beyond (min,max) gets clamped.
+    if( pos <= min ) {
         return 1.0;
-    } else if( pos > max ) {
+    } else if( pos >= max ) {
         return 0.0;
     }
 
@@ -281,4 +290,106 @@ double convert_weight( int weight )
         ret /= 453.6;
     }
     return ret;
+}
+
+double temp_to_celsius( double fahrenheit )
+{
+    return ( ( fahrenheit - 32.0 ) * 5.0 / 9.0 );
+}
+
+float multi_lerp( const std::vector<std::pair<float, float>> &points, float x )
+{
+    size_t i = 0;
+    while( i < points.size() && points[i].first <= x ) {
+        i++;
+    }
+
+    if( i == 0 ) {
+        return points.front().second;
+    } else if( i >= points.size() ) {
+        return points.back().second;
+    }
+
+    // How far are we along the way from last threshold to current one
+    const float t = ( x - points[i - 1].first ) /
+                    ( points[i].first - points[i - 1].first );
+
+    // Linear interpolation of values at relevant thresholds
+    return ( t * points[i].second ) + ( ( 1 - t ) * points[i - 1].second );
+}
+
+ofstream_wrapper::ofstream_wrapper( const std::string &path )
+{
+    file_stream.open( path.c_str(), std::ios::binary );
+    if( !file_stream.is_open() ) {
+        throw std::runtime_error( "opening file failed" );
+    }
+}
+
+ofstream_wrapper::~ofstream_wrapper() = default;
+
+void ofstream_wrapper::close()
+{
+    file_stream.close();
+    if( file_stream.fail() ) {
+        throw std::runtime_error( "writing to file failed" );
+    }
+}
+
+bool write_to_file( const std::string &path, const std::function<void( std::ostream & )> &writer,
+                    const char *const fail_message )
+{
+    try {
+        ofstream_wrapper fout( path );
+        writer( fout.stream() );
+        fout.close();
+        return true;
+
+    } catch( const std::exception &err ) {
+        if( fail_message ) {
+            popup( _( "Failed to write %1$s to \"%2$s\": %3$s" ), fail_message, path.c_str(), err.what() );
+        }
+        return false;
+    }
+}
+
+ofstream_wrapper_exclusive::ofstream_wrapper_exclusive( const std::string &path )
+    : path( path )
+{
+    fopen_exclusive( file_stream, path.c_str(), std::ios::binary );
+    if( !file_stream.is_open() ) {
+        throw std::runtime_error( _( "opening file failed" ) );
+    }
+}
+
+ofstream_wrapper_exclusive::~ofstream_wrapper_exclusive()
+{
+    if( file_stream.is_open() ) {
+        fclose_exclusive( file_stream, path.c_str() );
+    }
+}
+
+void ofstream_wrapper_exclusive::close()
+{
+    fclose_exclusive( file_stream, path.c_str() );
+    if( file_stream.fail() ) {
+        throw std::runtime_error( _( "writing to file failed" ) );
+    }
+}
+
+bool write_to_file_exclusive( const std::string &path,
+                              const std::function<void( std::ostream & )> &writer, const char *const fail_message )
+{
+    try {
+        ofstream_wrapper_exclusive fout( path );
+        writer( fout.stream() );
+        fout.close();
+        return true;
+
+    } catch( const std::exception &err ) {
+        if( fail_message ) {
+            popup( _( "Failed to write %1$s to \"%2$s\": %3$s" ), fail_message, path.c_str(), err.what() );
+        }
+        return false;
+    }
 }

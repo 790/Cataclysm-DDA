@@ -31,12 +31,6 @@ class recipe_dictionary
         recipe *operator[]( const std::string &rec_name ) {
             return by_name[rec_name];
         }
-
-        /** Allows for lookup like: 'recipe_dict[id]'. */
-        recipe *operator[]( int rec_id ) {
-            return by_index[rec_id];
-        }
-
         size_t size() const {
             return recipes.size();
         }
@@ -53,7 +47,7 @@ class recipe_dictionary
          * Goes over all recipes and calls the predicate, if it returns true, the recipe
          * is removed *and* deleted.
          */
-        void delete_if( const std::function<bool(recipe &)> &pred );
+        void delete_if( const std::function<bool( recipe & )> &pred );
 
     private:
         std::list<recipe *> recipes;
@@ -62,7 +56,6 @@ class recipe_dictionary
         std::map<const itype_id, std::vector<recipe *>> by_component;
 
         std::map<const std::string, recipe *> by_name;
-        std::map<int, recipe *> by_index;
 
         /** Maps a component to a list of recipes. So we can look up what we can make with an item */
         void add_to_component_lookup( recipe *r );

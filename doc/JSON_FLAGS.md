@@ -25,6 +25,12 @@
 - ```CC_ARMOR```
 - ```CC_MISC```
 
+### Flags
+
+- ```BLIND_EASY``` Easy to craft with little to no light
+- ```BLIND_HARD``` Possible to craft with little to no light, but difficult
+- ```UNCRAFT_SINGLE_CHARGE``` Lists returned amounts for one charge of an item that is counted by charges.
+
 ## Furniture & Terrain
 List of known flags, used in both terrain.json and furniture.json
 
@@ -54,7 +60,8 @@ List of known flags, used in both terrain.json and furniture.json
 - ```CONSOLE``` Used as a computer.
 - ```ALARMED``` Sets off an alarm if smashed.
 - ```SUPPORTS_ROOF``` Used as a boundary for roof construction.
-- ```CONNECT_TO_WALL```
+- ```CONNECT_TO_WALL``` (only for terrain) This flag has been superseded by the JSON entry "connects_to", but retained for backward compatibility.
+- ```WALL``` This terrain is an upright obstacle. Used for fungal conversion, and also implies "CONNECT_TO_WALL".
 - ```NO_FLOOR```
 - ```RAMP```
 - ```RAMP_END```
@@ -139,7 +146,6 @@ Example: `-` and `|` is terrain with the `CONNECT_TO_WALL` flag, `O` does not ha
 
 ### Currently only used for Fungal conversions
 
-- ```WALL``` This terrain is an upright obstacle.
 - ```ORGANIC``` This furniture is partly organic.
 - ```FLOWER``` This furniture is a flower.
 - ```SHRUB``` This terrain is a shrub.
@@ -243,22 +249,19 @@ Flags used to describe monsters and define their properties and abilities.
 - ```WOOL``` May produce wool when butchered.
 - ```FEATHER``` May produce feathers when butchered.
 - ```FAT``` May produce fat when butchered.
-- ```CBM_CIV``` May produce a common cbm or two when butchered.
 - ```BONES``` May produce bones and sinews when butchered.
 - ```IMMOBILE``` Doesn't move (e.g. turrets)
-- ```FRIENDLY_SPECIAL``` Use our special attack, even if friendly.
 - ```HIT_AND_RUN``` Flee for several turns after a melee attack.
 - ```GUILT``` You feel guilty for killing it.
 - ```HUMAN``` It's a live human, as long as it's alive.
 - ```NO_BREATHE``` Creature can't drown and is unharmed by gas, smoke or poison.
 - ```REGENERATES_50``` Monster regenerates very quickly over time.
-- ```REGENERATES_10``` Monster regenerates very quickly over time.
+- ```REGENERATES_10``` Monster regenerates quickly over time.
 - ```FLAMMABLE``` Monster catches fire, burns, and spreads fire to nearby objects.
 - ```REVIVES``` Monster corpse will revive after a short period of time.
 - ```CHITIN``` May produce chitin when butchered.
-- ```VERMIN``` Creature is too small for normal combat, butchering etc.
+- ```VERMIN``` Obsolete flag for inconsequential monsters, now prevents loading.
 - ```NOGIB``` Does not leave gibs / meat chunks when killed with huge damage.
-- ```HUNTS_VERMIN``` Creature uses vermin as a food source. Not implemented.
 - ```ABSORBS``` Consumes objects it moves over.
 - ```LARVA``` Creature is a larva. Currently used for gib and blood handling.
 - ```ARTHROPOD_BLOOD``` Forces monster to bleed hemolymph.
@@ -274,6 +277,11 @@ Flags used to describe monsters and define their properties and abilities.
 - ```FISHABLE``` It is fishable.
 - ```INTERIOR_AMMO``` Monster contains ammo inside itself, no need to load on launch. Prevents ammo from being dropped on disable.
 - ```NIGHT_INVISIBILITY``` Monster becomes invisible if it's more than one tile away and the lighting on its tile is LL_LOW or less. Visibility is not affected by night vision.
+
+### Monster defense attacks
+- ```NONE``` No special attack-back
+- ```ZAPBACK``` Shock attacker on hit
+- ```ACIDSPLASH``` Splash acid on the attacker
 
 ### Special attacks
 Some special attacks are also valid use actions for tools and weapons.
@@ -298,7 +306,6 @@ Some special attacks are also valid use actions for tools and weapons.
 - ```FUNGUS``` Releases fungal spores and attempts to infect the player.
 - ```FUNGUS_GROWTH``` Grows a young fungaloid into an adult.
 - ```FUNGUS_SPROUT``` Grows a fungal wall.
-- ```LEAP``` Monster leaps from one point to another.
 - ```DERMATIK``` Attempts to lay dermatik eggs in the player.
 - ```DERMATIK_GROWTH``` Dermatik larva grows into an adult.
 - ```PLANT``` Fungal spores take seed and grow into a fungaloid.
@@ -327,7 +334,6 @@ Some special attacks are also valid use actions for tools and weapons.
 - ```GENERATOR``` Regenerates health.
 - ```UPGRADE``` Upgrades a regular zombie into a special zombie.
 - ```BREATHE``` Spawns a `breather`
-- ```BITE``` Bites the player.
 - ```BRANDISH``` Brandish a knife at the player.
 - ```FLESH_GOLEM``` Attack the player with claw, and inflict disease `downed` if the attack connects.
 - ```PARROT``` Parrots the speech defined in `speech.json`, picks one of the lines randomly. "speaker" points to a monster id.
@@ -465,7 +471,7 @@ These branches are also the valid entries for the categories of `dreams` in `dre
 - ```DOME_LIGHT```
 - ```HORN``` Generates noise when used.
 - ```BEEPER``` Generates noise when the vehicle moves backward.
-- ```CHIMES```
+- ```CHIMES``` Generates continuous noise when used.
 - ```STEREO```
 - ```MULTISQUARE``` Causes this part and any adjacent parts with the same ID to act as a singular part.
 - ```CIRCLE_LIGHT``` Projects a circular radius of light when turned on.
@@ -476,12 +482,13 @@ These branches are also the valid entries for the categories of `dreams` in `dre
 - ```POWER_TRANSFER``` Transmits power to and from an attached thingy (probably a vehicle).
 - ```INITIAL_PART``` When starting a new vehicle via the construction menu, this vehicle part will be the initial part of the vehicle (if the used item matches the item required for this part).
 - ```NO_JACK```
-- ```TOOL_NONE```
-- ```TOOL_WRENCH```
+- ```TOOL_NONE``` Can be removed/installed without any tools
+- ```TOOL_WRENCH``` Attached with bolts, can be removed/installed with a wrench
+- ```TOOL_SCREWDRIVER``` Attached with screws, can be removed/installed with a screwdriver
 - ```DIFFICULTY_REMOVE```
-- ```NAILABLE```
+- ```NAILABLE``` Attached with nails
 - ```FOLDABLE```
-- ```SCOOP``` Pulls items from underneath the vehicle to the cargo space of the part. Also mops up liquids. 
+- ```SCOOP``` Pulls items from underneath the vehicle to the cargo space of the part. Also mops up liquids.
   - Uses the ```bonus``` tag to determine the maximum size of the item picked up.
 - ```PLANTER``` Plants seeds into tilled dirt, spilling them when the terrain underneath is unsuitable. It is damaged by running it over non-```DIGGABLE``` surfaces.
   - ```ADVANCED_PLANTER``` This planter doesn't spill seeds and avoids damaging itself on non-diggable surfaces.
@@ -574,12 +581,14 @@ listings, as ids are constant throughout DDA's code.  Happy chambering!  :-)
 - ```EXPLOSIVE``` Explodes without any shrapnel.
 - ```EXPLOSIVE_BIG``` Large explosion without any shrapnel.
 - ```EXPLOSIVE_HUGE``` Huge explosion without any shrapnel.
+- ```CUSTOM_EXPLOSION``` Explosion as specified in ```"explosion"``` field of used ammo. See JSON_INFO.md
 - ```FRAG``` Small explosion that spreads shrapnel.
 - ```INCENDIARY``` Lights target on fire.
 - ```NAPALM``` Explosion that spreads fire.
 - ```TEARGAS``` Generates a cloud of teargas.
-- ```SMOKE``` Generates a cloud of smoke.
-- ```SMOKE_BIG``` Generates a large cloud of smoke.
+- ```SMOKE``` Generates a cloud of smoke at the target.
+- ```SMOKE_BIG``` Generates a large cloud of smoke at the target.
+- ```MUZZLE_SMOKE``` Generate a small cloud of smoke at the source.
 - ```TRAIL``` Creates a trail of smoke.
 - ```FLARE``` Lights the target on fire.
 - ```FLASHBANG``` Blinds and deafens nearby targets.
@@ -637,6 +646,7 @@ Some armor flags, such as `WATCH` and `ALARMCLOCK` are compatible with other ite
 - ```ALARMCLOCK``` Has an alarm-clock feature.
 - ```BELTED``` Layer for backpacks and things worn over outerwear.
 - ```BLIND``` Blinds the wearer while worn, and provides nominal protection v. flashbang flashes.
+- ```BLOCK_WHILE_WORN``` Allows worn armor or shields to be used for blocking attacks.
 - ```COLLAR``` This piece of clothing has a wide collar that can keep your mouth warm.
 - ```DEAF``` Makes the player deaf.
 - ```ELECTRIC_IMMUNE``` This gear completely protects you from electric discharges.
@@ -655,6 +665,7 @@ Some armor flags, such as `WATCH` and `ALARMCLOCK` are compatible with other ite
 - ```RAD_PROOF``` This piece of clothing completely protects you from radiation.
 - ```RAD_RESIST``` This piece of clothing partially protects you from radiation.
 - ```RAINPROOF``` Prevents the covered body-part(s) from getting wet in the rain.
+- ```RESTRICT_HANDS``` Prevents the player from wielding a weapon two-handed, forcing one-handed use if the weapon permits it.
 - ```SKINTIGHT``` Undergarment layer.
 - ```STURDY``` This clothing is a lot more resistant to damage than normal.
 - ```SUN_GLASSES``` Prevents glaring when in sunlight.
@@ -710,7 +721,6 @@ Some armor flags, such as `WATCH` and `ALARMCLOCK` are compatible with other ite
 - ```WEED``` Makes you roll with Cheech & Chong. Adds disease `weed_high`.
 - ```COKE``` Decreases hunger. Adds disease `high`.
 - ```CRACK``` Decreases hunger. Adds disease `high`.
-- ```GRACK``` Decreases hunger. Adds disease 'high'.
 - ```METH``` Adds disease `meth`
 - ```VITAMINS``` Increases healthiness (not to be confused with HP)
 - ```VACCINE``` Greatly increases health.
@@ -739,6 +749,7 @@ Some armor flags, such as `WATCH` and `ALARMCLOCK` are compatible with other ite
 - ```USE_EAT_VERB``` "You drink your %s." or "You eat your %s."
 - ```FERTILIZER``` Works as fertilizer for farming.
 - ```LENS``` Lens items can make fires via focusing light rays.
+- ```ZOOM``` Zoom items can increase your overmap sight range.
 - ```FIRE_DRILL``` Item will start fires in the primitive way.
 - ```MUTAGEN_STRONG``` Chance of mutating several times.
 - ```MUTAGEN_WEAK``` Causes generic mutation (with less chance to mutate than `MUTAGEN_STRONG`).
@@ -767,7 +778,6 @@ Some armor flags, such as `WATCH` and `ALARMCLOCK` are compatible with other ite
 - ```PKILL_3``` Heavy painkiller.
 - ```PKILL_4``` "You shoot up."
 - ```PKILL_L``` Slow-release painkiller.
-- ```BREW``` ... Can be put into fermenting vat.
 - ```HIDDEN_POISON``` ... Food is poisonous, visible only with a certain survival skill level.
 - ```HIDDEN_HALLU``` ... Food causes hallucinations, visible only with a certain survival skill level.
 - ```USE_ON_NPC``` Can be used on NPCs (not necessarily by them).
@@ -782,12 +792,12 @@ Some armor flags, such as `WATCH` and `ALARMCLOCK` are compatible with other ite
 - ```SLICE``` Deals cutting damage, with a low chance of getting stuck.
 - ```MESSY``` Resistant to getting stuck in a monster. Potentially cause more gore in the future?
 - ```WHIP``` Has a chance of disarming the opponent.
+- ```REACH_ATTACK``` Allows to perform reach attack.
 - ```NON_STUCK``` Resistant to getting stuck in a monster; not as large of an effect as `MESSY`.
 - ```UNARMED_WEAPON``` Wielding this item still counts as unarmed combat.
 - ```NO_UNWIELD``` Cannot unwield this item.
 - ```NO_RELOAD``` Item can never be reloaded (even if has a valid ammo type).
 - ```SHEATH_SWORD``` Item can be sheathed in a sword scabbard
-- ```IAIJUTSU``` Sword can slash at an enemy as it's drawn if cutting skill is above 7 and a roll is passed
 - ```SHEATH_KNIFE``` Item can be sheathed in a knife sheath, it applicable to small/medium knives (with volume not bigger than 2)
 - ```QUIVER_n``` Item can hold n arrows (will parse number as integer)
 - ```ALWAYS_TWOHAND``` Item is always wielded with two hands. Without this, the items volume and weight are used to calculate this.
@@ -795,12 +805,9 @@ Some armor flags, such as `WATCH` and `ALARMCLOCK` are compatible with other ite
 
 ## Guns
 
-- ```MODE_BURST``` Has a burst-fire mode.
-- ```BURST_ONLY``` No single-fire mode. Note that this is an additional flag to the above "MODE_BURST" flag.
 - ```RELOAD_AND_SHOOT``` Firing automatically reloads and then shoots.
 - ```RELOAD_ONE``` Only reloads one round at a time.
-- ```NO_AMMO``` Does not directly have a loaded ammo type.
-- ```BIO_WEAPON``` Weapon is a CBM weapon, uses power as ammo. (CBM weapons should get both NO_AMMO and BIO_WEAPON, to work correctly).
+- ```BIO_WEAPON``` Weapon is a CBM weapon, uses power as ammo and should not specify an ammo type
 - ```CHARGE``` Has to be charged to fire. Higher charges do more damage.
 - ```NO_UNLOAD``` Cannot be unloaded.
 - ```FIRE_50``` Uses 50 shots per firing.
@@ -809,15 +816,23 @@ Some armor flags, such as `WATCH` and `ALARMCLOCK` are compatible with other ite
 - ```STR_RELOAD``` Reload speed is affected by strength.
 - ```RELOAD_EJECT``` Ejects shell from gun on reload instead of when fired.
 - ```NO_BOOM``` Cancels the ammo effect "FLAME".
-- ```STR8_DRAW``` Character needs at least strength 8 to use the full range of this bow, can not be used with less than 4 strength.
-- ```STR10_DRAW``` Character needs at least strength 10 to use the full range of this bow, can not be used with less than 5 strength.
-- ```STR12_DRAW``` Character needs at least strength 12 to use the full range of this bow, can not be used with less than 6 strength.
+- ```STR_DRAW``` Range with this weapon is reduced unless character has at least twice the required minimum strength
 - ```MOUNTED_GUN``` Gun can only be used on terrain / furniture with the "MOUNTABLE" flag.
 - ```WATERPROOF_GUN``` Gun does not rust and can be used underwater.
 - ```UNDERWATER_GUN``` Gun is optimized for usage underwater, does perform badly outside of water.
+- ```FIRE_TWOHAND``` Gun can only be fired if player has two free hands.
+- ```PRIMITIVE_RANGED_WEAPON``` Allows using non-gunsmith tools to repair it (but not reinforce).
 - ```NEVER_JAMS``` Never malfunctions.
 - ```COLLAPSIBLE_STOCK``` Reduces weapon volume proportional to the base size of the gun excluding any mods (see also SLOW_WIELD).
 - ```IRREMOVABLE``` Makes so that the gunmod cannot be removed.
+- ```RAPIDFIRE``` Increases rate of fire by 50% for AUTO firing mode
+
+## Magazines
+
+- ```MAG_COMPACT``` Can be stashed in an appropriate ammo pouch (intended for compact magazines)
+- ```MAG_BULKY``` Can be stashed in an appropriate oversize ammo pouch (intended for bulky or awkwardly shaped magazines)
+- ```MAG_DESTROY``` Magazine is destroyed when the last round is consumed (intended for ammo belts). Has precedence over MAG_EJECT.
+- ```MAG_EJECT``` Magazine is ejected from the gun/tool when the last round is consumed
 
 ## Tools
 

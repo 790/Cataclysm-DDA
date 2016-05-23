@@ -1,6 +1,5 @@
 [
     {
-
             "type": "profession",
             "ident": "bionic_prepper",
             "name": "Bionic Prepper",
@@ -140,6 +139,57 @@
     },
     {
         "type": "profession",
+        "ident": "sheltered_militia",
+        "name": "Sheltered Militia",
+        "description": "At the start of the cataclysm, you hunkered down in a bomb shelter.  Now, it is winter, and you hope your guns and the skills you have acquired can help you survive.",
+        "points": 4,
+        "skills": [
+            {
+                "level": 2,
+                "name": "gun"
+            },
+            {
+                "level": 1,
+                "name": "rifle"
+            },
+            {
+                "level": 1,
+                "name": "pistol"
+            }
+        ],
+        "items": {
+            "both": [
+                "winter_pants_army",
+                "undershirt",
+                "socks",
+                "sweatshirt",
+                "boots_hiking",
+                "garand",
+                "shoulder_strap",
+                "garandclip",
+                "garandclip",
+                "3006",
+                "3006",
+                "m1911",
+                "holster",
+                "m1911mag",
+                "45_acp",
+                "pockknife",
+                "water_clean",
+                "matches"
+            ],
+            "male": [
+                "boxer_shorts"
+            ],
+            "female": [
+                "sports_bra",
+                "boy_shorts"
+            ]
+        },
+        "flags": ["SCEN_ONLY"]
+    },
+    {
+        "type": "profession",
         "ident": "tailor",
         "name": "Tailor",
         "description": "Tailoring may not seem like the most useful skill when the world has ended.  Most people wouldn't expect a simple tailor to live long.  This is your opportunity to prove them wrong.",
@@ -268,7 +318,6 @@
                 "name": "mechanics"
             }
         ],
-
         "items": {
             "both": [
                 "dress_shirt",
@@ -398,8 +447,6 @@
                 "honeycomb",
                 "honey_bottled",
                 "honey_bottled"
-
-
             ],
             "male": [
                 "boxer_briefs"
@@ -426,7 +473,6 @@
                 "name": "throw"
             }
         ],
-
         "items": {
             "both": [
                 "tank_top",
@@ -516,6 +562,7 @@
                 "boots_combat",
                 "m4a1",
                 "223",
+                "stanag30",
                 "knife_combat",
                 "binoculars",
                 "sheath"
@@ -576,7 +623,9 @@
                 "socks",
                 "boots_combat",
                 "rm2000_smg",
+                "8x40_25_mag",
                 "suppressor",
+                "8mm_fmj",
                 "8mm_fmj",
                 "kukri"
             ],
@@ -707,6 +756,7 @@
                 "suit",
                 "bowhat",
                 "glock_19",
+                "glockmag",
                 "9mm",
                 "socks",
                 "dress_shoes",
@@ -744,6 +794,7 @@
                 "holster",
                 "baton",
                 "m9",
+                "m9mag",
                 "9mm",
                 "pockknife",
                 "hat_ball"
@@ -963,6 +1014,7 @@
                 "boots",
                 "holster",
                 "usp_45",
+                "usp45mag",
                 "45_acp",
                 "whistle"
             ],
@@ -998,6 +1050,7 @@
                 "fedora",
                 "wristwatch",
                 "l_sp_45",
+                "lw12mag",
                 "45_acp",
                 "socks",
                 "dress_shoes",
@@ -1062,7 +1115,9 @@
                 "gloves_tactical",
                 "badge_swat",
                 "usp_9mm",
+                "usp9mag",
                 "hk_mp5",
+                "mp5mag",
                 "shoulder_strap",
                 "9mm",
                 "9mm",
@@ -1119,6 +1174,7 @@
                 "gloves_tactical",
                 "badge_swat",
                 "usp_9mm",
+                "usp9mag",
                 "ksg",
                 "shoulder_strap",
                 "shot_00",
@@ -1167,6 +1223,7 @@
                 "holster",
                 "wristwatch",
                 "usp_45",
+                "usp45mag",
                 "45_acp",
                 "remington_700",
                 "3006",
@@ -1224,6 +1281,7 @@
                 "badge_deputy",
                 "holster",
                 "usp_45",
+                "usp45mag",
                 "45_acp",
                 "tonfa",
                 "tazer",
@@ -1289,6 +1347,41 @@
                 "jacket_flannel",
                 "compbow",
                 "arrow_cf",
+                "knife_hunting",
+                "hat_hunting",
+                "quiver"
+            ],
+            "male": [
+                "boxer_shorts"
+            ],
+            "female": [
+                "sports_bra",
+                "boxer_shorts"
+            ]
+        }
+    },
+    {
+        "type": "profession",
+        "ident": "crossbow_hunter",
+        "name": "Crossbow Hunter",
+        "description": "Ever since you were a child you loved hunting, and you soon took a liking to the challenge of hunting with a crossbow.  Why, if the world ended there's nothing you'd want at your side more than your trusty crossbow.  So when it did, you made sure to bring it along.",
+        "points": 2,
+        "skills": [
+            {
+                "level": 2,
+                "name": "archery"
+            }
+        ],
+        "items": {
+            "both": [
+                "army_top",
+                "knit_scarf",
+                "socks",
+                "boots_steel",
+                "pants_cargo",
+                "jacket_flannel",
+                "crossbow",
+                "bolt_metal",
                 "knife_hunting",
                 "hat_hunting",
                 "quiver"
@@ -1530,7 +1623,6 @@
                 "name": "mechanics"
             }
         ],
-
         "items": {
             "both": [
                 "jeans",
@@ -1602,6 +1694,7 @@
                 "knit_scarf",
                 "gold_watch",
                 "briefcase_smg",
+                "stenmag",
                 "pda",
                 "9mm"
             ],
@@ -1892,7 +1985,7 @@
                 "l_mp_9mm",
                 "9mmP",
                 "9mmP",
-                "spare_mag"
+                "lw21mag"
             ],
             "male": [
                 "boxer_shorts"
@@ -2041,6 +2134,7 @@
                 "socks",
                 "boots_combat",
                 "rm51_assault_rifle",
+                "8x40_50_mag",
                 "8mm_fmj",
                 "8mm_fmj"
             ],
@@ -3331,7 +3425,6 @@
             ]
         }
     },
-
    {
         "type": "profession",
         "ident": "archaeologist",
@@ -3470,7 +3563,6 @@
             ]
         }
     },
-
     {
         "type": "profession",
         "ident": "farmer",
@@ -3565,7 +3657,6 @@
                 "name": "archery"
             }
         ],
-
         "items": {
             "both": [
                 "survivor_vest",
@@ -3619,7 +3710,6 @@
                 "name": "rifle"
             }
         ],
-
         "items": {
             "both": [
                 "pants_army",
@@ -3630,6 +3720,7 @@
                 "gloves_tactical",
                 "rucksack",
                 "scar_h",
+                "scarhmag",
                 "762_51",
                 "katana",
                 "scabbard"
@@ -3672,7 +3763,6 @@
                 "name": "firstaid"
             }
         ],
-
         "items": {
             "both": [
                 "socks",
@@ -3687,11 +3777,13 @@
                 "canteen",
                 "shoulder_strap",
                 "m4a1",
+                "stanag30",
                 "556",
                 "556",
                 "556",
                 "bayonet",
-                "spare_mag",
+                "stanag30",
+                "stanag30",
                 "mil_mess_kit",
                 "knife_combat",
                 "quikclot"
@@ -3965,7 +4057,6 @@
             ]
         }
     },{
-
         "type": "profession",
         "ident": "drone_op",
         "name": "Drone Operator",
@@ -3998,7 +4089,6 @@
         }
     },
     {
-
             "type": "profession",
             "ident": "elementary_student",
             "name": "Elementary Student",
@@ -4194,7 +4284,6 @@
         }
     },
     {
-
             "type": "profession",
             "ident": "bionic_student",
             "name": "Bionic Student",
@@ -4417,6 +4506,60 @@
                 "socks",
                 "sneakers",
                 "runner_bag"
+            ],
+            "male": [
+                "briefs"
+            ],
+            "female": [
+                "sports_bra",
+                "boy_shorts"
+            ]
+        }
+    },
+    {
+        "type": "profession",
+        "ident": "camper",
+        "name": "Camper",
+        "description": "You always enjoyed hiking and camping in the wilderness before everything fell apart, so it was a no-brainer to grab your bag and run when the sirens sounded.  The world may be ruined, but you're prepared to make a home wherever you may find yourself.",
+        "points": 6,
+        "skills": [
+            {
+                "level": 1,
+                "name": "survival"
+            },
+            {
+                "level": 1,
+                "name": "swimming"
+            },
+            {
+                "level": 1,
+                "name": "firstaid"
+            }
+        ],
+        "items": {
+            "both": [
+                "tshirt",
+                "socks",
+                "jeans",
+                "jacket_windbreaker",
+                "boots_hiking",
+                "gloves_light",
+                "hat_cotton",
+                "knit_scarf",
+                "backpack",
+                "ref_lighter",
+                "hatchet",
+                "e_tool",
+                "tent_kit",
+                "rollmat",
+                "sleeping_bag",
+                "knife_swissarmy",
+                "mess_kit",
+                "gasoline_lantern",
+                "canteen",
+                "granola",
+                "pur_tablets",
+                "1st_aid"
             ],
             "male": [
                 "briefs"

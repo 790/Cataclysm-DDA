@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
 
 struct iteminfo;
 enum direction : unsigned;
@@ -101,7 +102,68 @@ nc_color msgtype_to_color(const game_message_type type, const bool bOldMsg = fal
 int msgtype_to_tilecolor(const game_message_type type, const bool bOldMsg = false);
 
 /**
- * Print text with embedded color tags, x, y are in curses system.
+ * @anchor color_tags
+ * @name color tags
+ *
+ * Most print function have only one color parameter (or none at all), therefor they would
+ * print the whole text in one color. To print some parts of a text in a different color,
+ * one would have to write separate calls to the print functions.
+ *
+ * Color tags allow embedding coloring instructions directly into the text, which allows
+ * a single call to the print function with the full text. The color tags are removed
+ * (not printed), but the text inside the tags is printed with a specific color.
+ *
+ * Example: Print "You need a tool to do this." in white and the word "tool" in red.
+ * \code
+ *    wprintz( w, c_white, "You need a " );
+ *    wprintz( w, c_red, "tool" );
+ *    wprintz( w, c_white, " to do this." );
+ * \endcode
+ * Same code with color tags:
+ * \code
+ *    print_colored_text( w, c_white, "You need a <color_red>tool</color> to do this." );
+ * \endcode
+ *
+ * Color tags must appear in pairs, first `<color_XXX>`, followed by text, followed by `</color>`.
+ * The text in between is colored according to the color `XXX`. `XXX` must be a valid color name,
+ * see @ref color_from_string. Color tags do *not* stack, the text inside the color tags should
+ * not contain any other color tags.
+ *
+ * Functions that handle color tags should contain a note about this in their documentation. If
+ * they have no such note, they probably don't handle color tags (which means they just print the
+ * string as is).
+ *
+ * Note: use @ref string_from_color to convert a `nc_color` value to a string suitable for a
+ * color tag:
+ * \code
+ *    nc_color color = ...;
+ *    text = "<color_" + string_from_color( color ) + ">some text</color>";
+ * \endcode
+ *
+ * One can use @ref utf8_width with the second parameter set to `true` to determine the printed
+ * length of a string containing color tags. The parameter instructs `utf8_width` to ignore the
+ * color tags. For example `utf8_width("<color_red>text</color>")` would return 23, but
+ * `utf8_width("<color_red>text</color>", true)` returns 4 (the length of "text").
+ */
+/*@{*/
+/**
+ * Removes the color tags from the input string. This might be required when the string is to
+ * be used for functions that don't handle color tags.
+ */
+std::string remove_color_tags( const std::string &text );
+/*@}*/
+
+/**
+ * Split the input text into separate lines and wrap long lines. Each resulting line is at most
+ * `width` console cells long.
+ * The functions handles @ref color_tags.
+ * @return A vector of lines, it may contain empty strings. Each entry is at most `width`
+ * console cells width.
+ */
+std::vector<std::string> foldstring( std::string str, int width );
+
+/**
+ * Print text with embedded @ref color_tags, x, y are in curses system.
  * The text is not word wrapped, but may automatically be wrapped on new line characters or
  * when it reaches the border of the window (both is done by the curses system).
  * If the text contains no color tags, it's equivalent to a simple mvprintz.
@@ -110,9 +172,9 @@ int msgtype_to_tilecolor(const game_message_type type, const bool bOldMsg = fals
  * change to a color according to the color tags that are in the text.
  * @param base_color Base color that is used outside of any color tag.
  **/
-void print_colored_text( WINDOW *w, int x, int y, nc_color &cur_color, nc_color base_color, const std::string &text );
+void print_colored_text( WINDOW *w, int y, int x, nc_color &cur_color, nc_color base_color, const std::string &text );
 /**
- * Print word wrapped text (with color tags) into the window.
+ * Print word wrapped text (with @ref color_tags) into the window.
  * @param begin_line Line in the word wrapped text that is printed first (lines before that are not printed at all).
  * @param base_color Color used outside of any color tags.
  * @param scroll_msg Optional, can be empty. If not empty and the text does not fit the window, the string is printed
@@ -121,10 +183,8 @@ void print_colored_text( WINDOW *w, int x, int y, nc_color &cur_color, nc_color 
  * This allows the caller to restrict the begin_line number on future calls / when modified by the user.
  */
 int print_scrollable( WINDOW *w, int begin_line, const std::string &text, nc_color base_color, const std::string &scroll_msg );
-
-std::vector<std::string> foldstring (std::string str, int width);
 /**
- * Format, fold and print text in the given window. The function handles color tags and
+ * Format, fold and print text in the given window. The function handles @ref color_tags and
  * uses them while printing. It expects a printf-like format string and matching
  * arguments to that format (see @ref string_format).
  * @param begin_x The row index on which to print the first line.
@@ -146,7 +206,7 @@ int fold_and_print(WINDOW *w, int begin_y, int begin_x, int width, nc_color colo
 /**
  * Like @ref fold_and_print, but starts the output with the N-th line of the folded string.
  * This can be used for scrolling large texts. Parameters have the same meaning as for
- * @ref fold_and_print, the function therefor handles color tags correctly.
+ * @ref fold_and_print, the function therefor handles @ref color_tags correctly.
  * @param begin_line The index of the first line (of the folded string) that is to be printed.
  * The function basically removes all lines before this one and prints the remaining lines
  * with `fold_and_print`.
@@ -163,7 +223,7 @@ int fold_and_print_from(WINDOW *w, int begin_y, int begin_x, int width, int begi
                         nc_color color, const std::string &text);
 /**
  * Prints a single line of formatted text. The text is automatically trimmed to fit into the given
- * width. The function handles color tags correctly.
+ * width. The function handles @ref color_tags correctly.
  * @param begin_x,begin_y The row and column index on which to start the line.
  * @param width Maximal width of the printed line, if the text is longer, it is cut off.
  * @param base_color The initially used color. This can be overridden using color tags.
@@ -171,6 +231,8 @@ int fold_and_print_from(WINDOW *w, int begin_y, int begin_x, int width, int begi
 void trim_and_print(WINDOW *w, int begin_y, int begin_x, int width, nc_color base_color,
                     const char *mes, ...);
 void center_print(WINDOW *w, int y, nc_color FG, const char *mes, ...);
+int right_print( WINDOW *w, const int line, const int right_indent, const nc_color FG,
+                 const char *mes, ... );
 void display_table(WINDOW *w, const std::string &title, int columns,
                    const std::vector<std::string> &data);
 void multipage(WINDOW *w, std::vector<std::string> text, std::string caption = "", int begin_y = 0);
@@ -190,23 +252,23 @@ void mvputch_hi(int y, int x, nc_color FG, const std::string &ch);
 // Using long ch is deprecated, use an UTF-8 encoded string instead
 void mvwputch_hi(WINDOW *w, int y, int x, nc_color FG, long ch);
 void mvwputch_hi(WINDOW *w, int y, int x, nc_color FG, const std::string &ch);
-void mvprintz(int y, int x, nc_color FG, const char *mes, ...);
 void mvwprintz(WINDOW *w, int y, int x, nc_color FG, const char *mes, ...);
-void printz(nc_color FG, const char *mes, ...);
 void wprintz(WINDOW *w, nc_color FG, const char *mes, ...);
 
 void draw_custom_border(WINDOW *w, chtype ls = 1, chtype rs = 1, chtype ts = 1, chtype bs = 1, chtype tl = 1, chtype tr = 1,
                         chtype bl = 1, chtype br = 1, nc_color FG = BORDER_COLOR, int posy = 0, int height = 0, int posx = 0, int width = 0);
-void draw_border(WINDOW *w, nc_color FG = BORDER_COLOR);
+void draw_border( WINDOW *w, nc_color border_color = BORDER_COLOR,
+                  std::string title = "", nc_color title_color = c_ltred );
 void draw_tabs(WINDOW *w, int active_tab, ...);
 
 std::string word_rewrap (const std::string &ins, int width);
 std::vector<size_t> get_tag_positions(const std::string &s);
 std::vector<std::string> split_by_color(const std::string &s);
-std::string remove_color_tags(const std::string &s);
 
 bool query_yn(const char *mes, ...);
 int  query_int(const char *mes, ...);
+
+bool internal_query_yn( const char *mes, va_list ap );
 
 /**
  * Shows a window querying the user for input.
@@ -216,7 +278,7 @@ int  query_int(const char *mes, ...);
  * any text and confirms the input (by pressing ENTER). It's currently not possible these two
  * situations.
  *
- * @param title The displayed title, describing what to enter. Color tags can be used.
+ * @param title The displayed title, describing what to enter. @ref color_tags can be used.
  * @param width Width of the input area where the user input appears.
  * @param input The initially display input. The user can change this.
  * @param desc An optional text (e.h. help or formatting information) which is displayed
@@ -252,7 +314,7 @@ int  menu(bool cancelable, const char *mes, ...);
  *
  * The functions return the key (taken from @ref getch) that was entered by the user.
  *
- * The message is a printf-like string. It may contain color tags, which are used while printing.
+ * The message is a printf-like string. It may contain @ref color_tags, which are used while printing.
  *
  * - PF_GET_KEY (ignored when combined with PF_NO_WAIT) cancels the popup on *any* user input.
  *   Without the flag the popup is only canceled when the user enters new-line, space and escape.
@@ -303,6 +365,8 @@ int draw_item_info(const int iLeft, int iWidth, const int iTop, const int iHeigh
 char rand_char();
 long special_symbol (long sym);
 
+std::string trim(const std::string &s); // Remove spaces from the start and the end of a string
+
 /**
  * @name printf-like string formatting.
  *
@@ -338,9 +402,10 @@ std::string replace_colors(std::string text);
 std::string &capitalize_letter(std::string &pattern, size_t n = 0);
 std::string rm_prefix(std::string str, char c1 = '<', char c2 = '>');
 #define rmp_format(...) rm_prefix(string_format(__VA_ARGS__))
-size_t shortcut_print(WINDOW *w, int y, int x, nc_color color, nc_color colork,
-                      const std::string &fmt);
-size_t shortcut_print(WINDOW *w, nc_color color, nc_color colork, const std::string &fmt);
+size_t shortcut_print( WINDOW *w, int y, int x, nc_color text_color, nc_color shortcut_color,
+                      const std::string &fmt );
+size_t shortcut_print( WINDOW *w, nc_color text_color, nc_color shortcut_color,
+                      const std::string &fmt );
 
 // short visual animation (player, monster, ...) (hit, dodge, ...)
 // cTile is a UTF-8 strings, and must be a single cell wide!
@@ -351,6 +416,30 @@ std::pair<std::string, nc_color> const& get_item_hp_bar(int dmg);
 
 std::pair<std::string, nc_color> const& get_light_level(const float light);
 
+/**
+ * @return String containing the bar. Example: "Label [********    ]".
+ * @param val Value to display. Can be unclipped.
+ * @param width Width of the entire string.
+ * @param label Label before the bar. Can be empty.
+ * @param begin Iterator over pairs <double p, char c> (see below).
+ * @param end Iterator over pairs <double p, char c> (see below).
+ * Where:
+ *    p - percentage of the entire bar which can be filled with c.
+ *    c - character to fill the segment of the bar with
+ */
+template<typename RatingIterator>
+std::string get_labeled_bar( const double val, const int width, const std::string &label,
+    RatingIterator begin, RatingIterator end );
+
+/**
+ * @return String containing the bar. Example: "Label [********    ]".
+ * @param val Value to display. Can be unclipped.
+ * @param width Width of the entire string.
+ * @param label Label before the bar. Can be empty.
+ * @param c Character to fill the bar with.
+ */
+std::string get_labeled_bar( const double val, const int width, const std::string &label, char c );
+
 void draw_tab(WINDOW *w, int iOffsetX, std::string sText, bool bSelected);
 void draw_subtab(WINDOW *w, int iOffsetX, std::string sText, bool bSelected, bool bDecorate = true);
 void draw_scrollbar(WINDOW *window, const int iCurrentLine, const int iContentHeight,
@@ -358,7 +447,6 @@ void draw_scrollbar(WINDOW *window, const int iCurrentLine, const int iContentHe
                     nc_color bar_color = c_white, const bool bTextScroll = false);
 void calcStartPos(int &iStartPos, const int iCurrentLine,
                   const int iContentHeight, const int iNumEntries);
-void clear_window(WINDOW *w);
 
 class scrollingcombattext
 {
@@ -373,6 +461,7 @@ class scrollingcombattext
                 int iPosX;
                 int iPosY;
                 direction oDir;
+                direction oUp, oUpRight, oRight, oDownRight, oDown, oDownLeft, oLeft, oUpLeft;
                 int iDirX;
                 int iDirY;
                 int iStep;
@@ -382,6 +471,7 @@ class scrollingcombattext
                 std::string sText2;
                 game_message_type gmt2;
                 std::string sType;
+                bool iso_mode;
 
             public:
                 cSCT(const int p_iPosX, const int p_iPosY, direction p_oDir,

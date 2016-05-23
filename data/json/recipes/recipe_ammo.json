@@ -171,25 +171,6 @@
   ]
 },{
   "type" : "recipe",
-  "result": "dart",
-  "category": "CC_AMMO",
-  "subcategory": "CSC_AMMO_ARROWS",
-  "skill_used": "fabrication",
-  "difficulty": 0,
-  "time": 1000,
-  "reversible": false,
-  "autolearn": true,
-  "qualities":[
-    {"id":"CUT","level":1,"amount":1}
-  ],
-  "components": [
-    [
-      [ "stick", 1 ],
-      [ "2x4", 1 ]
-    ]
-  ]
-},{
-  "type" : "recipe",
   "result": "pebble",
   "category": "CC_AMMO",
   "subcategory": "CSC_AMMO_OTHER",
@@ -198,6 +179,7 @@
   "time": 1000,
   "reversible": false,
   "autolearn": true,
+  "flags": ["BLIND_EASY"],
   "qualities":[
     {"id":"HAMMER","level":1,"amount":1}
   ], "components": [
@@ -226,7 +208,7 @@
       ["crucible_clay", -1]
      ],
      [
-      ["forge", 25], ["char_forge", 5]
+      ["forge", 25]
      ]
     ],
   "components":
@@ -257,7 +239,7 @@
       ["crucible_clay", -1]
     ],
     [
-      ["forge", 100], ["char_forge", 20], [ "oxy_torch", 20]
+      ["forge", 100], [ "oxy_torch", 20]
     ]
     ],
     "components": [
@@ -271,28 +253,6 @@
       ]
     ]
   },{
-  "type" : "recipe",
-  "result" : "fletching",
-  "category" : "CC_AMMO",
-  "subcategory": "CSC_AMMO_COMPONENTS",
-  "skill_used" : "fabrication",
-  "skills_required": [ "survival", 1 ],
-  "difficulty" : 1,
-  "time" : 5000,
-  "reversible" : false,
-  "autolearn" : true,
-  "book_learn" : [[ "recipe_arrows", 1 ], [ "manual_archery", 2 ], [ "book_archery", 2]],
-  "qualities":[
-    {"id":"CUT","level":1,"amount":1}
-  ],
-  "components" : [
-    [ [ "bone_glue", 1 ] ],
-    [
-      [ "rag", 2 ],
-      [ "leather", 2 ]
-    ]
-  ]
-},{
   "type" : "recipe",
   "result" : "bone_glue",
   "category" : "CC_AMMO",
@@ -311,12 +271,11 @@
     [
       [ "fire", -1 ],
       [ "hotplate", 3 ],
-      [ "char_smoker", 1],
       [ "toolset", 3]
     ]
   ],
   "components" : [
-    [ 
+    [
       [ "water", 1 ],
       [ "water_clean", 1 ]
     ],
@@ -349,7 +308,6 @@
     [
       [ "stick", 1 ],
       [ "broom", 1 ],
-      [ "mop", 1 ],
       [ "2x4", 1 ],
       [ "bee_sting", 1 ]
     ],
@@ -367,12 +325,11 @@
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -401,7 +358,6 @@
     [
       [ "stick", 1 ],
       [ "broom", 1 ],
-      [ "mop", 1 ],
       [ "2x4", 1 ],
       [ "bee_sting", 1 ]
     ],
@@ -419,12 +375,11 @@
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -458,7 +413,6 @@
     [
       [ "stick", 1 ],
       [ "broom", 1 ],
-      [ "mop", 1 ],
       [ "2x4", 1 ],
       [ "bee_sting", 1 ]
     ],
@@ -466,12 +420,11 @@
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -503,19 +456,11 @@
       [ "rag", 1, "NO_RECOVER" ]
     ],
     [
-      [ "whiskey", 7, "NO_RECOVER" ],
-      [ "single_malt_whiskey", 7, "NO_RECOVER" ],
-      [ "vodka", 7, "NO_RECOVER" ],
-      [ "rum", 7, "NO_RECOVER" ],
-      [ "tequila", 7, "NO_RECOVER" ],
-      [ "gin", 7, "NO_RECOVER" ],
-      [ "moonshine", 7, "NO_RECOVER" ],
-      [ "brandy", 7, "NO_RECOVER" ],
-      [ "chem_ethanol", 7, "NO_RECOVER" ],
-      [ "denat_alcohol", 7, "NO_RECOVER" ],
-      [ "lamp_oil", 100, "NO_RECOVER" ],
-      [ "gasoline", 200, "NO_RECOVER" ],
-      [ "diesel", 200, "NO_RECOVER" ]
+      [ "lamp_oil", 50, "NO_RECOVER" ],
+      [ "chem_ethanol", 100, "NO_RECOVER" ],
+      [ "denat_alcohol", 100, "NO_RECOVER" ],
+      [ "gasoline", 250, "NO_RECOVER" ],
+      [ "diesel", 250, "NO_RECOVER" ]
     ]
   ]
 },{
@@ -549,7 +494,6 @@
     [
       [ "stick", 1 ],
       [ "broom", 1 ],
-      [ "mop", 1 ],
       [ "2x4", 1 ],
       [ "bee_sting", 1 ]
     ],
@@ -557,12 +501,11 @@
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -597,12 +540,11 @@
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -633,7 +575,6 @@
     [
       [ "stick", 2 ],
       [ "broom", 2 ],
-      [ "mop", 2 ],
       [ "2x4", 1 ],
       [ "bee_sting", 2 ]
     ],
@@ -641,12 +582,11 @@
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -676,7 +616,6 @@
     [
       [ "stick", 2 ],
       [ "broom", 2 ],
-      [ "mop", 2 ],
       [ "2x4", 1 ],
       [ "bee_sting", 2 ]
     ],
@@ -694,12 +633,11 @@
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -733,7 +671,6 @@
     [
       [ "stick", 2 ],
       [ "broom", 2 ],
-      [ "mop", 2 ],
       [ "2x4", 1 ],
       [ "bee_sting", 2 ]
     ],
@@ -741,12 +678,11 @@
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -781,12 +717,11 @@
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -881,7 +816,6 @@
     [
       [ "stick", 1 ],
       [ "broom", 1 ],
-      [ "mop", 1 ],
       [ "2x4", 1 ],
       [ "bee_sting", 1 ]
     ]
@@ -927,7 +861,6 @@
       ["toolset", 7],
       ["fire", -1],
       ["forge", 7],
-      ["char_forge", 2],
       ["oxy_torch", 2]
       ]
     ],
@@ -990,7 +923,6 @@
     [
       [ "stick", 1 ],
       [ "broom", 1 ],
-      [ "mop", 1 ],
       [ "2x4", 1 ],
       [ "bee_sting", 1 ]
     ],
@@ -1096,7 +1028,6 @@
       [ "tin", 100 ],
       [ "bismuth", 100 ],
       [ "solder_wire", 100 ]
-
     ]
   ]
 },{
@@ -1138,7 +1069,6 @@
       [ "tin", 40 ],
       [ "bismuth", 40 ],
       [ "solder_wire", 40 ]
-
     ]
   ]
 },{
@@ -1221,7 +1151,6 @@
       [ "tin", 40 ],
       [ "bismuth", 40 ],
       [ "solder_wire", 40 ]
-
     ]
   ]
 },{
@@ -1263,7 +1192,6 @@
       [ "tin", 250 ],
       [ "bismuth", 250 ],
       [ "solder_wire", 250 ]
-
     ]
   ]
 },{
@@ -1305,7 +1233,6 @@
       [ "tin", 125 ],
       [ "bismuth", 125 ],
       [ "solder_wire", 125 ]
-
     ]
   ]
 },{
@@ -1347,7 +1274,6 @@
       [ "tin", 300 ],
       [ "bismuth", 300 ],
       [ "solder_wire", 300 ]
-
     ]
   ]
 },{
@@ -1389,7 +1315,6 @@
       [ "tin", 400 ],
       [ "bismuth", 400 ],
       [ "solder_wire", 400 ]
-
     ]
   ]
 },{
@@ -1431,7 +1356,6 @@
       [ "tin", 500 ],
       [ "bismuth", 500 ],
       [ "solder_wire", 500 ]
-
     ]
   ]
 },{
@@ -1473,7 +1397,6 @@
       [ "tin", 400 ],
       [ "bismuth", 400 ],
       [ "solder_wire", 400 ]
-
     ]
   ]
 },{
@@ -1515,7 +1438,6 @@
       [ "tin", 100 ],
       [ "bismuth", 100 ],
       [ "solder_wire", 100 ]
-
     ]
   ]
 },{
@@ -1557,7 +1479,6 @@
       [ "tin", 400 ],
       [ "bismuth", 400 ],
       [ "solder_wire", 400 ]
-
     ],
     [
       [ "cu_pipe", 3]
@@ -1602,7 +1523,6 @@
       [ "tin", 400 ],
       [ "bismuth", 400 ],
       [ "solder_wire", 400 ]
-
     ],
     [
       [ "cu_pipe", 2 ]
@@ -1647,7 +1567,6 @@
       [ "tin", 450 ],
       [ "bismuth", 450 ],
       [ "solder_wire", 450 ]
-
     ],
     [
       [ "cu_pipe", 2 ]
@@ -1692,7 +1611,6 @@
       [ "tin", 200 ],
       [ "bismuth", 200 ],
       [ "solder_wire", 200 ]
-
     ]
   ]
 },{
@@ -1719,22 +1637,21 @@
   ],
   "components": [
     [
-      [ "46mm_casing", 100 ]
+      [ "46mm_casing", 40 ]
     ],
     [
-      [ "smpistol_primer", 100 ]
+      [ "smpistol_primer", 40 ]
     ],
     [
-      [ "gunpowder", 400 ]
+      [ "gunpowder", 160 ]
     ],
     [
-      [ "lead", 200 ],
-      [ "gold_small", 200 ],
-      [ "silver_small", 200 ],
-      [ "tin", 200 ],
-      [ "bismuth", 200 ],
-      [ "solder_wire", 200 ]
-
+      [ "lead", 80 ],
+      [ "gold_small", 80 ],
+      [ "silver_small", 80 ],
+      [ "tin", 80 ],
+      [ "bismuth", 80 ],
+      [ "solder_wire", 80 ]
     ]
   ]
 },{
@@ -1776,7 +1693,6 @@
       [ "tin", 400 ],
       [ "bismuth", 400 ],
       [ "solder_wire", 400 ]
-
     ],
     [
       [ "cu_pipe", 4 ]
@@ -1821,7 +1737,6 @@
       [ "tin", 400 ],
       [ "bismuth", 400 ],
       [ "solder_wire", 400 ]
-
     ],
     [
       [ "cu_pipe", 4 ]
@@ -1847,8 +1762,7 @@
       [ "fire", -1 ],
       [ "toolset", 2 ],
       [ "press", 2 ],
-      [ "hotplate", 2 ],
-      [ "char_smoker", 1 ]
+      [ "hotplate", 2 ]
     ]
   ],
   "components": [
@@ -1893,8 +1807,7 @@
       [ "fire", -1 ],
       [ "toolset", 2 ],
       [ "press", 2 ],
-      [ "hotplate", 2 ],
-      [ "char_smoker", 1 ]
+      [ "hotplate", 2 ]
     ]
   ],
   "components": [
@@ -1921,6 +1834,60 @@
   ]
 },{
   "type" : "recipe",
+  "result": "survivor223mag",
+  "category": "CC_AMMO",
+  "subcategory": "CSC_AMMO_BULLETS",
+  "skill_used": "fabrication",
+  "skills_required": [ "gun", 1 ],
+  "difficulty": 2,
+  "time": 20000,
+  "reversible": false,
+  "autolearn": true,
+  "qualities":[
+    {"id":"SAW_M","level":1,"amount":1},
+    {"id":"HAMMER","level":1,"amount":1},
+    {"id":"SCREW_FINE","level":1,"amount":1}
+  ],
+  "components": [
+    [
+      [ "sheet_metal", 1 ]
+    ],
+    [
+      [ "spring", 1 ]
+    ],
+    [
+      [ "duct_tape", 40 ]
+    ]
+  ]
+},{
+  "type" : "recipe",
+  "result": "survivor9mm_mag",
+  "category": "CC_AMMO",
+  "subcategory": "CSC_AMMO_BULLETS",
+  "skill_used": "fabrication",
+  "skills_required": [ "gun", 1 ],
+  "difficulty": 2,
+  "time": 20000,
+  "reversible": false,
+  "autolearn": true,
+  "qualities":[
+    {"id":"SAW_M","level":1,"amount":1},
+    {"id":"HAMMER","level":1,"amount":1},
+    {"id":"SCREW_FINE","level":1,"amount":1}
+  ],
+  "components": [
+    [
+      [ "sheet_metal", 1 ]
+    ],
+    [
+      [ "spring", 1 ]
+    ],
+    [
+      [ "duct_tape", 40 ]
+    ]
+  ]
+},{
+  "type" : "recipe",
   "result": "reloaded_223",
   "category": "CC_AMMO",
   "subcategory": "CSC_AMMO_BULLETS",
@@ -1943,26 +1910,25 @@
   ],
   "components": [
     [
-      [ "223_casing", 40 ]
+      [ "223_casing", 30 ]
     ],
     [
-      [ "smrifle_primer", 40 ]
+      [ "smrifle_primer", 30 ]
     ],
     [
-      [ "gunpowder", 160 ]
+      [ "gunpowder", 120 ]
     ],
     [
-      ["22_casing", 40 ],
+      ["22_casing", 30 ],
       ["cu_pipe", 2]
     ],
     [
-      [ "lead", 80 ],
-      [ "gold_small", 80 ] ,
-      [ "silver_small", 80 ],
-      [ "tin", 80 ],
-      [ "bismuth", 80 ],
-      [ "solder_wire", 80 ]
-
+      [ "lead", 60 ],
+      [ "gold_small", 60 ] ,
+      [ "silver_small", 60 ],
+      [ "tin", 60 ],
+      [ "bismuth", 60 ],
+      [ "solder_wire", 60 ]
     ]
   ]
 },{
@@ -1989,26 +1955,25 @@
   ],
   "components": [
     [
-      [ "223_casing", 40 ]
+      [ "223_casing", 30 ]
     ],
     [
-      [ "smrifle_primer", 40 ]
+      [ "smrifle_primer", 30 ]
     ],
     [
-      [ "gunpowder", 240 ]
+      [ "gunpowder", 180 ]
     ],
     [
-      [ "22_casing", 40 ],
+      [ "22_casing", 30 ],
       [ "cu_pipe", 4]
     ],
     [
-      [ "lead", 80 ],
-      [ "gold_small", 80 ] ,
-      [ "silver_small", 80 ],
-      [ "tin", 80 ],
-      [ "bismuth", 80 ],
-      [ "solder_wire", 80 ]
-
+      [ "lead", 60 ],
+      [ "gold_small", 60 ] ,
+      [ "silver_small", 60 ],
+      [ "tin", 60 ],
+      [ "bismuth", 60 ],
+      [ "solder_wire", 60 ]
     ]
   ]
 },{
@@ -2097,6 +2062,33 @@
   ]
 },{
   "type" : "recipe",
+  "result": "garandclip",
+  "category": "CC_AMMO",
+  "subcategory": "CSC_AMMO_BULLETS",
+  "skill_used": "fabrication",
+  "skills_required": [ "gun", 2 ],
+  "difficulty": 3,
+  "time": 20000,
+  "reversible": false,
+  "autolearn": false,
+  "book_learn": [["recipe_bullets" , 2 ] , [ "mag_rifle", 3 ]],
+  "qualities":[
+    {"id":"SAW_M","level":1,"amount":1},
+    {"id":"HAMMER","level":1,"amount":1}
+  ],
+  "tools": [
+    [
+      [ "small_repairkit", 10 ],
+      [ "large_repairkit", 5 ]
+    ]
+  ],
+  "components": [
+    [
+      [ "steel_chunk", 1 ]
+    ]
+  ]
+},{
+  "type" : "recipe",
   "result": "reloaded_3006",
   "category": "CC_AMMO",
   "subcategory": "CSC_AMMO_BULLETS",
@@ -2134,7 +2126,50 @@
       [ "tin", 80 ],
       [ "bismuth", 80 ],
       [ "solder_wire", 80 ]
-
+    ],
+    [
+      [ "cu_pipe", 3 ]
+    ]
+  ]
+},{
+  "type" : "recipe",
+  "result": "reloaded_3006fmj",
+  "category": "CC_AMMO",
+  "subcategory": "CSC_AMMO_BULLETS",
+  "skill_used": "fabrication",
+  "skills_required": [ "gun", 5 ],
+  "difficulty": 5,
+  "time": 5000,
+  "reversible": false,
+  "autolearn": false,
+  "book_learn": [["recipe_bullets" , 3 ] , [ "mag_rifle", 4 ]],
+  "tools": [
+    [
+      [ "press", -1 ]
+    ],
+    [
+      [ "fire", -1 ],
+      [ "toolset", 2 ],
+      [ "press", 2 ]
+    ]
+  ],
+  "components": [
+    [
+      [ "3006_casing", 10 ]
+    ],
+    [
+      [ "lgrifle_primer", 10 ]
+    ],
+    [
+      [ "gunpowder", 120 ]
+    ],
+    [
+      [ "lead", 80 ],
+      [ "gold_small", 80 ] ,
+      [ "silver_small", 80 ],
+      [ "tin", 80 ],
+      [ "bismuth", 80 ],
+      [ "solder_wire", 80 ]
     ],
     [
       [ "cu_pipe", 3 ]
@@ -2182,7 +2217,6 @@
       [ "tin", 200 ],
       [ "bismuth", 200 ],
       [ "solder_wire", 200 ]
-
     ],
     [
       [ "cu_pipe", 3 ]
@@ -2349,7 +2383,6 @@
       [ "tin", 120 ],
       [ "bismuth", 120 ],
       [ "solder_wire", 120 ]
-
     ],
     [
       [ "cu_pipe", 3 ]
@@ -2394,7 +2427,6 @@
       [ "tin", 120 ],
       [ "bismuth", 120 ],
       [ "solder_wire", 120 ]
-
     ],
     [
       [ "cu_pipe", 3 ]
@@ -2517,7 +2549,6 @@
       [ "tin", 400 ],
       [ "bismuth", 400 ],
       [ "solder_wire", 400 ]
-
     ]
   ]
 },{
@@ -2559,7 +2590,6 @@
       [ "tin", 400 ],
       [ "bismuth", 400 ],
       [ "solder_wire", 400 ]
-
     ]
   ]
 },{
@@ -2637,7 +2667,7 @@
   "time": 17500,
   "reversible": false,
   "autolearn": false,
-  "book_learn": [["recipe_bullets" , 2 ] , [ "manual_shotgun", 2 ]],  
+  "book_learn": [["recipe_bullets" , 2 ] , [ "manual_shotgun", 2 ]],
   "qualities":[
     {"id":"SAW_M","level":1,"amount":1}
   ],
@@ -2730,7 +2760,7 @@
   "time": 500,
   "reversible": false,
   "autolearn": true,
-  "book_learn": [["recipe_bullets" , 2 ] , [ "manual_shotgun", 2 ]],  
+  "book_learn": [["recipe_bullets" , 2 ] , [ "manual_shotgun", 2 ]],
   "qualities":[
     {"id":"SAW_M","level":1,"amount":1}
   ],
@@ -2825,82 +2855,6 @@
   ]
 },{
   "type" : "recipe",
-  "result": "shot_scrapbag",
-  "category": "CC_AMMO",
-  "subcategory": "CSC_AMMO_BULLETS",
-  "skill_used": "fabrication",
-  "skills_required": [ "gun", 1 ],
-  "difficulty": 4,
-  "time": 17500,
-  "reversible": false,
-  "autolearn": false,
-  "book_learn": [["recipe_bullets" , 3 ] , [ "manual_shotgun", 3 ]],
-  "tools": [
-    [
-      [ "press", -1 ]
-    ],
-    [
-      [ "fire", -1 ],
-      [ "toolset", 2 ],
-      [ "press", 2 ]
-    ]
-  ],
-  "components": [
-    [
-      [ "shot_hull", 25 ]
-    ],
-    [
-      [ "shotgun_primer", 25 ]
-    ],
-    [
-      [ "gunpowder", 400 ]
-    ],
-    [
-      [ "material_sand", 50 ],
-      [ "salt", 16 ]
-    ],
-    [
-      [ "rag", 4 ]
-    ]
-  ]
-},{
-  "type" : "recipe",
-  "result": "reloaded_shot_beanbag",
-  "category": "CC_AMMO",
-  "subcategory": "CSC_AMMO_BULLETS",
-  "skill_used": "fabrication",
-  "skills_required": [ "gun", 1 ],
-  "difficulty": 4,
-  "time": 17500,
-  "reversible": false,
-  "autolearn": false,
-  "book_learn": [["recipe_bullets" , 3 ] , [ "manual_shotgun", 3 ]],
-  "tools": [
-    [
-      [ "press", -1 ]
-    ],
-    [
-      [ "fire", -1 ],
-      [ "toolset", 2 ],
-      [ "press", 2 ]
-    ]
-  ],
-  "components": [
-    [
-      [ "shot_hull", 25 ]
-    ],
-    [
-      [ "shotgun_primer", 25 ]
-    ],
-    [
-      [ "gunpowder", 400 ]
-    ],
-    [
-      [ "rubber_slug", 25 ]
-    ]
-  ]
-},{
-  "type" : "recipe",
   "result": "incendiary",
   "category": "CC_AMMO",
   "subcategory": "CSC_AMMO_COMPONENTS",
@@ -2917,8 +2871,7 @@
     [
       [ "hotplate", 50 ],
       [ "toolset", 50 ],
-      [ "fire", -1 ],
-      [ "char_smoker", 5 ]
+      [ "fire", -1 ]
     ]
   ],
   "components": [
@@ -2929,7 +2882,7 @@
       [ "plastic_chunk", 4 ]
     ],
     [
-      [ "sugar", 1 ]
+      [ "sugar", 10 ]
     ]
   ]
 },{
@@ -2951,8 +2904,7 @@
       [ "press", 50 ],
       [ "hotplate", 50 ],
       [ "toolset", 50 ],
-      [ "fire", -1 ],
-      [ "char_smoker", 5 ]
+      [ "fire", -1 ]
     ],
     [
       [ "press", -1 ]
@@ -2999,8 +2951,7 @@
       [ "press", 50 ],
       [ "hotplate", 50 ],
       [ "toolset", 50 ],
-      [ "fire", -1 ],
-      [ "char_smoker", 5 ]
+      [ "fire", -1 ]
     ],
     [
       [ "press", -1 ]
@@ -3050,8 +3001,7 @@
       [ "press", 50 ],
       [ "hotplate", 50 ],
       [ "toolset", 50 ],
-      [ "fire", -1 ],
-      [ "char_smoker", 5 ]
+      [ "fire", -1 ]
     ],
     [
       [ "press", -1 ]
@@ -3098,8 +3048,7 @@
       [ "press", 50 ],
       [ "hotplate", 50 ],
       [ "toolset", 50 ],
-      [ "fire", -1 ],
-      [ "char_smoker", 5 ]
+      [ "fire", -1 ]
     ],
     [
       [ "boltcutters", -1 ],
@@ -3145,8 +3094,7 @@
       [ "press", 50 ],
       [ "hotplate", 50 ],
       [ "toolset", 50 ],
-      [ "fire", -1 ],
-      [ "char_smoker", 5 ]
+      [ "fire", -1 ]
     ],
     [
       [ "press", -1 ]
@@ -3360,7 +3308,7 @@
       ["crucible_clay", -1]
      ],
      [
-      ["forge", 50], ["char_forge", 10], [ "oxy_torch", 10]
+      ["forge", 50], [ "oxy_torch", 10]
      ]
     ],
     "components": [
@@ -3417,16 +3365,15 @@
     [
       ["plastic_chunk", 3]
     ],
-    [ 
+    [
       [ "feather", 10 ],
       [ "duct_tape", 40 ],
       [ "bag_plastic", 1 ],
-      [ "bottle_plastic", 1 ],
       [ "bottle_plastic_small", 1 ],
       [ "box_small", 1 ],
       [ "plastic_chunk", 1 ],
-      [ "aluminum_foil", 1 ],
-      [ "fletching", 10 ]
+      [ "aluminum_foil", 40 ],
+      [ "cash_card", 2 ]
     ]
   ]
 },{
@@ -3474,7 +3421,7 @@
       ["crucible_clay", -1]
      ],
      [
-      ["forge", 200], ["char_forge", 40], [ "oxy_torch", 40]
+      ["forge", 200], [ "oxy_torch", 40]
      ]
     ],
   "components":
@@ -3928,22 +3875,18 @@
     "time": 20000,
     "reversible": false,
     "autolearn": true,
-    "book_learn": [[ "manual_rifle", 2 ] , [ "manual_pistol", 2 ] , [ "recipe_bullets", 2 ]],
-    "qualities":[
-      {"id":"CUT","level":1,"amount":1}
-    ],
     "components": [
       [
-        [ "gunpowder", 600 ],
-        [ "chem_black_powder", 1200 ]
+        [ "gunpowder", 300 ],
+        [ "chem_black_powder", 600 ]
       ],
       [
-        [ "lead", 400 ],
-        [ "gold_small", 400 ],
-        [ "silver_small", 400 ],
-        [ "tin", 400 ],
-        [ "bismuth", 400 ],
-        [ "solder_wire", 400 ]
+        [ "lead", 300 ],
+        [ "gold_small", 300 ],
+        [ "silver_small", 300 ],
+        [ "tin", 300 ],
+        [ "bismuth", 300 ],
+        [ "solder_wire", 300 ]
       ],
       [
         [ "bag_plastic", 1 ],
@@ -3961,22 +3904,18 @@
     "time": 20000,
     "reversible": false,
     "autolearn": true,
-    "book_learn": [[ "manual_rifle", 2 ] , [ "manual_pistol", 2 ] , [ "recipe_bullets", 2 ]],
-    "qualities":[
-      {"id":"CUT","level":1,"amount":1}
-    ],
     "components": [
       [
-        [ "gunpowder", 600 ],
-        [ "chem_black_powder", 1200 ]
+        [ "gunpowder", 300 ],
+        [ "chem_black_powder", 600 ]
       ],
       [
-        [ "lead", 400 ],
-        [ "gold_small", 400 ],
-        [ "silver_small", 400 ],
-        [ "tin", 400 ],
-        [ "bismuth", 400 ],
-        [ "solder_wire", 400 ]
+        [ "lead", 300 ],
+        [ "gold_small", 300 ],
+        [ "silver_small", 300 ],
+        [ "tin", 300 ],
+        [ "bismuth", 300 ],
+        [ "solder_wire", 300 ]
       ],
       [
         [ "bag_plastic", 1 ],
@@ -4246,7 +4185,7 @@
     [ ["chisel", -1] ],
     [ ["swage", -1]  ],
     [ ["anvil", -1]  ],
-    [ ["forge", 50], [ "char_forge", 10], [ "oxy_torch", 10] ]
+    [ ["forge", 50], [ "oxy_torch", 10] ]
            ],
   "components": [
     [
@@ -4267,7 +4206,7 @@
   "qualities":[
     {"id":"CHEM","level":2,"amount":1}
   ], "book_learn": [["textbook_gaswarfare" , 8, "" ], ["textbook_anarch" , 7, "Stuff THE MAN doesn't want you to know" ], ["recipe_labchem", 6 ]],
-  "tools": [ [ ["hotplate", 25], ["toolset", 25], ["fire", -1], ["char_smoker", 3]  ] ],
+  "tools": [ [ ["hotplate", 25], ["toolset", 25], ["fire", -1] ] ],
   "components": [
     [ [ "gasoline", 125 ], [ "diesel", 125 ] ],
     [ [ "plastic_chunk", 4 ] ],
@@ -4470,82 +4409,6 @@
   ]
 },{
    "type" : "recipe",
-  "result": "reloaded_22_cb",
-  "category": "CC_AMMO",
-  "subcategory": "CSC_AMMO_BULLETS",
-  "skill_used": "fabrication",
-  "skills_required": [ "gun", 1 ],
-  "difficulty": 3,
-  "time": 25000,
-  "reversible": false,
-  "autolearn": false,
-  "book_learn": [["recipe_bullets" , 1 ] , [ "manual_pistol", 2 ]],
-  "tools": [
-    [
-      [ "press", -1 ]
-    ],
-    [
-      [ "fire", -1 ],
-      [ "toolset", 2 ],
-      [ "press", 2 ]
-    ]
-  ],
-  "components": [
-    [
-      [ "22_casing_new", 100 ]
-    ],
-    [
-      [ "gunpowder", 100 ]
-    ],
-    [
-      [ "lead", 200 ],
-      [ "gold_small", 200 ],
-      [ "silver_small", 200 ],
-      [ "tin", 200 ],
-      [ "bismuth", 200 ],
-      [ "solder_wire", 200 ]
-    ]
-  ]
-},{
-   "type" : "recipe",
-  "result": "reloaded_22_ratshot",
-  "category": "CC_AMMO",
-  "subcategory": "CSC_AMMO_BULLETS",
-  "skill_used": "fabrication",
-  "skills_required": [ "gun", 1 ],
-  "difficulty": 3,
-  "time": 25000,
-  "reversible": false,
-  "autolearn": false,
-  "book_learn": [["recipe_bullets" , 1 ] , [ "manual_pistol", 2 ]],
-  "tools": [
-    [
-      [ "press", -1 ]
-    ],
-    [
-      [ "fire", -1 ],
-      [ "toolset", 2 ],
-      [ "press", 2 ]
-    ]
-  ],
-  "components": [
-    [
-      [ "22_casing_new", 100 ]
-    ],
-    [
-      [ "gunpowder", 200 ]
-    ],
-    [
-      [ "lead", 200 ],
-      [ "gold_small", 200 ],
-      [ "silver_small", 200 ],
-      [ "tin", 200 ],
-      [ "bismuth", 200 ],
-      [ "solder_wire", 200 ]
-    ]
-  ]
-},{
-   "type" : "recipe",
   "result": "gas_fungicidal",
   "category": "CC_AMMO",
   "subcategory": "CSC_AMMO_OTHER",
@@ -4562,8 +4425,7 @@
     [
       [ "fire", -1 ],
       [ "toolset", 5 ],
-      [ "hotplate", 5 ],
-      [ "char_smoker", 4 ]
+      [ "hotplate", 5 ]
     ]
   ],
   "components": [
@@ -4591,8 +4453,7 @@
     [
       [ "fire", -1 ],
       [ "toolset", 5 ],
-      [ "hotplate", 5 ],
-      [ "char_smoker", 4 ]
+      [ "hotplate", 5 ]
     ]
   ],
   "components": [

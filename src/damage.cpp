@@ -8,6 +8,8 @@
 #include "map_iterator.h"
 #include "field.h"
 #include "mtype.h"
+#include "json.h"
+#include "itype.h"
 
 #include <map>
 
@@ -99,21 +101,23 @@ int dealt_damage_instance::total_damage() const
 
 
 resistances::resistances() : resist_vals( NUM_DT, 0 ) { }
-resistances::resistances( item &armor ) : resist_vals( NUM_DT, 0 )
+resistances::resistances( item &armor, bool to_self ) : resist_vals( NUM_DT, 0 )
 {
-    if( armor.is_armor() ) {
-        set_resist( DT_BASH, armor.bash_resist() );
-        set_resist( DT_CUT, armor.cut_resist() );
-        set_resist( DT_STAB, 0.8 * armor.cut_resist() ); // stab dam cares less bout armor
-        set_resist( DT_ACID, armor.acid_resist() );
+    // Armors protect, but all items can resist
+    if( to_self || armor.is_armor() ) {
+        for( int i = 0; i < NUM_DT; i++ ) {
+            damage_type dt = static_cast<damage_type>( i );
+            set_resist( dt, armor.damage_resist( dt, to_self ) );
+        }
     }
 }
 resistances::resistances( monster &monster ) : resist_vals( NUM_DT, 0 )
 {
     set_resist( DT_BASH, monster.type->armor_bash );
-    set_resist( DT_CUT, monster.type->armor_cut );
-    set_resist( DT_STAB, 0.8 * monster.type->armor_cut ); // stab dam cares less bout armor
-    set_resist( DT_ACID, monster.type->armor_cut / 2 ); // No acid resist stat yet
+    set_resist( DT_CUT,  monster.type->armor_cut );
+    set_resist( DT_STAB, monster.type->armor_stab );
+    set_resist( DT_ACID, monster.type->armor_acid );
+    set_resist( DT_HEAT, monster.type->armor_fire );
 }
 void resistances::set_resist( damage_type dt, int amount )
 {
@@ -139,13 +143,16 @@ float resistances::get_effective_resist( const damage_unit &du ) const
         case DT_ACID:
             effective_resist = std::max( type_resist( DT_ACID ) - du.res_pen, 0 ) * du.res_mult;
             break;
-        default: // TODO: DT_HEAT vs env protection, DT_COLD vs warmth
+        case DT_HEAT:
+            effective_resist = std::max( type_resist( DT_HEAT ) - du.res_pen, 0 ) * du.res_mult;
+            break;
+        default: // TODO: Other types
             effective_resist = 0;
     }
     return effective_resist;
 }
 
-void ammo_effects( const tripoint &p, const std::set<std::string> &effects )
+void apply_ammo_effects( const tripoint &p, const std::set<std::string> &effects )
 {
     if( effects.count( "EXPLOSIVE_SMALL" ) > 0 ) {
         g->explosion( p, 24, 0.4 );
@@ -156,11 +163,11 @@ void ammo_effects( const tripoint &p, const std::set<std::string> &effects )
     }
 
     if( effects.count( "FRAG" ) > 0 ) {
-        g->explosion( p, 24, 0.4, 28, false );
+        g->explosion( p, 24, 0.4, false, 28 );
     }
 
     if( effects.count( "NAPALM" ) > 0 ) {
-        g->explosion( p, 4, 0.7, 0, true );
+        g->explosion( p, 4, 0.7, true );
         // More intense fire near the center
         for( auto && pt : g->m.points_in_radius( p, 1, 0 ) ) {
             g->m.add_field( pt, fd_fire, 1, 0 );
@@ -168,7 +175,7 @@ void ammo_effects( const tripoint &p, const std::set<std::string> &effects )
     }
 
     if( effects.count( "NAPALM_BIG" ) > 0 ) {
-        g->explosion( p, 24, 0.8, 0, true );
+        g->explosion( p, 24, 0.8, true );
         // More intense fire near the center
         for( auto && pt : g->m.points_in_radius( p, 3, 0 ) ) {
             g->m.add_field( pt, fd_fire, 1, 0 );
@@ -179,7 +186,7 @@ void ammo_effects( const tripoint &p, const std::set<std::string> &effects )
         g->explosion( p, 450 );
         for( auto && pt : g->m.points_in_radius( p, 6, 0 ) ) {
             if( g->m.sees( p, pt, 3 ) &&
-                g->m.move_cost( pt ) > 0 ) {
+                g->m.passable( pt ) ) {
                 g->m.add_field( pt, fd_nuke_gas, 3, 0 );
             }
         }
@@ -189,10 +196,6 @@ void ammo_effects( const tripoint &p, const std::set<std::string> &effects )
         for( auto && pt : g->m.points_in_radius( p, 1, 0 ) ) {
             g->m.add_field( pt, fd_acid, 3, 0 );
         }
-    }
-
-    if( effects.count( "ACID_DROP" ) > 0 ) {
-        g->m.add_field( p, fd_acid, 1, 0 );
     }
 
     if( effects.count( "EXPLOSIVE_BIG" ) > 0 ) {
@@ -233,6 +236,10 @@ void ammo_effects( const tripoint &p, const std::set<std::string> &effects )
         g->flashbang( p );
     }
 
+    if( effects.count( "EMP" ) ) {
+        g->emp_blast( p );
+    }
+
     if( effects.count( "NO_BOOM" ) == 0 && effects.count( "FLAME" ) > 0 ) {
         for( auto && pt : g->m.points_in_radius( p, 1, 0 ) ) {
             g->m.add_field( pt, fd_fire, 1, 0 );
@@ -256,7 +263,6 @@ void ammo_effects( const tripoint &p, const std::set<std::string> &effects )
             }
         }
     }
-
 }
 
 
@@ -281,7 +287,6 @@ int aoe_size( const std::set<std::string> &tags )
     return 0;
 }
 
-
 static const std::map<std::string, damage_type> dt_map = {
     { "true", DT_TRUE },
     { "biological", DT_BIOLOGICAL },
@@ -304,10 +309,26 @@ damage_type dt_by_name( const std::string &name )
     return iter->second;
 }
 
+const std::string &name_by_dt( const damage_type &dt )
+{
+    auto iter = dt_map.cbegin();
+    while( iter != dt_map.cend() ) {
+        if( iter->second == dt ) {
+            return iter->first;
+        }
+        iter++;
+    }
+    static const std::string err_msg( "dt_not_found" );
+    return err_msg;
+}
+
 projectile::projectile() :
-    speed( 0 ),
-    drop( nullptr )
+    speed( 0 ), range( 0 ), drop( nullptr ), custom_explosion( nullptr )
 { }
+
+projectile::~projectile()
+{
+}
 
 projectile::projectile( const projectile &other )
 {
@@ -318,8 +339,10 @@ projectile &projectile::operator=( const projectile &other )
 {
     impact = other.impact;
     speed = other.speed;
+    range = other.range;
     proj_effects = other.proj_effects;
     set_drop( other.get_drop() );
+    set_custom_explosion( other.get_custom_explosion() );
 
     return *this;
 }
@@ -355,5 +378,67 @@ void projectile::set_drop( item &&it )
 void projectile::unset_drop()
 {
     drop.reset( nullptr );
+}
+
+const explosion_data &projectile::get_custom_explosion() const
+{
+    if( custom_explosion != nullptr ) {
+        return *custom_explosion;
+    }
+
+    static const explosion_data null_explosion{};
+    return null_explosion;
+}
+
+void projectile::set_custom_explosion( const explosion_data &ex )
+{
+    custom_explosion.reset( new explosion_data( ex ) );
+}
+
+void projectile::unset_custom_explosion()
+{
+    custom_explosion.reset();
+}
+
+damage_unit load_damage_unit( JsonObject &curr )
+{
+    damage_type dt = dt_by_name( curr.get_string( "damage_type" ) );
+    if( dt == DT_NULL ) {
+        curr.throw_error( "Invalid damage type" );
+    }
+
+    float amount = curr.get_float( "amount" );
+    int arpen = curr.get_int( "armor_penetration", 0 );
+    float armor_mul = curr.get_float( "armor_multiplier", 1.0f );
+    float damage_mul = curr.get_float( "damage_multiplier", 1.0f );
+    return damage_unit( dt, amount, arpen, armor_mul, damage_mul );
+}
+
+damage_instance load_damage_instance( JsonObject &jo )
+{
+    damage_instance di;
+    if( jo.has_array( "values" ) ) {
+        JsonArray jarr = jo.get_array( "values" );
+        while( jarr.has_more() ) {
+            JsonObject curr = jarr.next_object();
+            di.damage_units.push_back( load_damage_unit( curr ) );
+        }
+    } else if( jo.has_string( "damage_type" ) ) {
+        di.damage_units.push_back( load_damage_unit( jo ) );
+    }
+
+    di.effects = jo.get_tags( "effects" );
+    return di;
+}
+
+damage_instance load_damage_instance( JsonArray &jarr )
+{
+    damage_instance di;
+    while( jarr.has_more() ) {
+        JsonObject curr = jarr.next_object();
+        di.damage_units.push_back( load_damage_unit( curr ) );
+    }
+
+    return di;
 }
 

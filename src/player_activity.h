@@ -21,7 +21,7 @@ enum activity_type : int {    // expanded this enum for readability
     ACT_FORAGE,
     ACT_BUILD,
     ACT_VEHICLE,
-    ACT_REFILL_VEHICLE,
+    ACT_REFILL_VEHICLE, // not used anymore.
     ACT_TRAIN,
     ACT_WAIT_WEATHER,
     ACT_FIRSTAID,
@@ -46,6 +46,9 @@ enum activity_type : int {    // expanded this enum for readability
     ACT_START_ENGINES,
     ACT_OXYTORCH,
     ACT_CRACKING,
+    ACT_REPAIR_ITEM,
+    ACT_MEND_ITEM,
+    ACT_GUNMOD_ADD,
     ACT_WAIT_NPC,
     NUM_ACTIVITIES
 };
@@ -59,6 +62,8 @@ class player_activity : public JsonSerializer, public JsonDeserializer
     public:
         /** The type of this activity. */
         activity_type type;
+        /** Total number of moves required to complete the activity */
+        int moves_total;
         /** The number of moves remaining in this activity before it is complete. */
         int moves_left;
         /** An activity specific value. */

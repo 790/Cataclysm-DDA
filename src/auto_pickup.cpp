@@ -6,6 +6,7 @@
 #include "item_factory.h"
 #include "catacharset.h"
 #include "translations.h"
+#include "cata_utility.h"
 #include "path_info.h"
 #include "filesystem.h"
 #include "input.h"
@@ -118,7 +119,7 @@ void auto_pickup::show()
     ctxt.register_action("SWITCH_AUTO_PICKUP_OPTION");
     ctxt.register_action("HELP_KEYBINDINGS");
 
-    std::stringstream sTemp;
+    std::ostringstream sTemp;
 
     while(true) {
         int locx = 17;
@@ -362,7 +363,7 @@ void auto_pickup::test_pattern(const int iCurrentPage, const int iCurrentLine)
     int iStartPos = 0;
     const int iContentHeight = FULL_SCREEN_HEIGHT - 8;
     const int iContentWidth = FULL_SCREEN_WIDTH - 30;
-    std::stringstream sTemp;
+    std::ostringstream sTemp;
 
     WINDOW *w_test_rule_border = newwin(iContentHeight + 2, iContentWidth, iOffsetY, iOffsetX);
     WINDOW_PTR w_test_rule_borderptr( w_test_rule_border );
@@ -692,7 +693,6 @@ bool auto_pickup::save(const bool bCharacter)
     bChar = bCharacter;
     auto savefile = FILENAMES["autopickup"];
 
-    try {
         if (bCharacter) {
             savefile = world_generator->active_world->world_path + "/" + base64_encode(g->u.name) + ".apu.json";
             std::ifstream fin;
@@ -705,15 +705,7 @@ bool auto_pickup::save(const bool bCharacter)
             fin.close();
         }
 
-        std::ofstream fout;
-        fout.exceptions(std::ios::badbit | std::ios::failbit);
-
-        fout.open(savefile.c_str());
-
-        if(!fout.is_open()) {
-            return true; //trick game into thinking it was saved
-        }
-
+    return write_to_file( savefile, [&]( std::ostream &fout ) {
         JsonOut jout( fout, true );
         serialize(jout);
 
@@ -721,16 +713,7 @@ bool auto_pickup::save(const bool bCharacter)
             merge_vector();
             create_rules();
         }
-
-        fout.close();
-        return true;
-
-    } catch(std::ios::failure &) {
-        popup(_("Failed to save autopickup to %s"), savefile.c_str());
-        return false;
-    }
-
-    return false;
+    }, _( "autopickup configuration" ) );
 }
 
 void auto_pickup::load_character()

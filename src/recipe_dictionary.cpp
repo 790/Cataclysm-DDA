@@ -11,8 +11,7 @@ void recipe_dictionary::add( recipe *rec )
 {
     recipes.push_back( rec );
     add_to_component_lookup( rec );
-    by_name[rec->ident] = rec;
-    by_index[rec->id] = rec;
+    by_name[rec->ident()] = rec;
     by_category[rec->cat].push_back( rec );
 }
 
@@ -20,17 +19,16 @@ void recipe_dictionary::remove( recipe *rec )
 {
     recipes.remove( rec );
     remove_from_component_lookup( rec );
-    by_name.erase( rec->ident );
-    by_index.erase( rec->id );
+    by_name.erase( rec->ident() );
     // Terse name for category vector since it's repeated so many times.
     auto &cat_vec = by_category[rec->cat];
     cat_vec.erase( std::remove( cat_vec.begin(), cat_vec.end(), rec ), cat_vec.end() );
 }
 
-void recipe_dictionary::delete_if( const std::function<bool(recipe &)> &pred )
+void recipe_dictionary::delete_if( const std::function<bool( recipe & )> &pred )
 {
     for( auto iter = recipes.begin(); iter != recipes.end(); ) {
-        recipe * const r = *iter;
+        recipe *const r = *iter;
         // Already moving to the next, so we can erase the recipe without invalidating `iter`.
         ++iter;
         if( pred( *r ) ) {
@@ -43,7 +41,7 @@ void recipe_dictionary::delete_if( const std::function<bool(recipe &)> &pred )
 void recipe_dictionary::add_to_component_lookup( recipe *r )
 {
     std::unordered_set<itype_id> counted;
-    for( const auto &comp_choices : r->requirements.components ) {
+    for( const auto &comp_choices : r->requirements.get_components() ) {
         for( const item_comp &comp : comp_choices ) {
             if( counted.count( comp.type ) ) {
                 continue;
@@ -66,7 +64,6 @@ void recipe_dictionary::clear()
 {
     by_component.clear();
     by_name.clear();
-    by_index.clear();
     by_category.clear();
     for( auto &recipe : recipes ) {
         delete recipe;

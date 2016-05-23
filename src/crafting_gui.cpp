@@ -25,6 +25,7 @@ std::vector<std::string> craft_cat_list;
 std::map<std::string, std::vector<std::string> > craft_subcat_list;
 std::map<std::string, std::string> normalized_names;
 
+static void draw_can_craft_indicator( WINDOW *w, const int margin_y, const recipe &rec );
 static void draw_recipe_tabs( WINDOW *w, std::string tab, TAB_MODE mode = NORMAL );
 static void draw_recipe_subtabs( WINDOW *w, std::string tab, std::string subtab,
                                  TAB_MODE mode = NORMAL );
@@ -78,10 +79,10 @@ std::string get_subcat_name( const std::string &cat, std::string prefixed_name )
 void translate_all()
 {
     for( const auto &cat : craft_cat_list ) {
-        normalized_names[cat] = get_cat_name( _( cat.c_str() ) );
+        normalized_names[cat] = _( get_cat_name( cat ).c_str() );
 
         for( const auto &subcat : craft_subcat_list[cat] ) {
-            normalized_names[subcat] =  get_subcat_name( cat, _( subcat.c_str() ) ) ;
+            normalized_names[subcat] =  _( get_subcat_name( cat, subcat ).c_str() ) ;
         }
     }
 }
@@ -112,7 +113,7 @@ const recipe *select_crafting_recipe( int &batch_size )
     const int dataHeight = TERMY - ( headHeight + subHeadHeight );
     const int infoWidth = width - FULL_SCREEN_WIDTH - 1;
 
-    int lastid = -1;
+    const recipe *last_recipe = nullptr;
 
     WINDOW *w_head = newwin( headHeight, width, 0, wStart );
     WINDOW_PTR w_head_ptr( w_head );
@@ -126,7 +127,7 @@ const recipe *select_crafting_recipe( int &batch_size )
     int item_info_width = wStart + width - infoWidth;
     int item_info_height = headHeight + subHeadHeight;
 
-    if ( !isWide ) {
+    if( !isWide ) {
         item_info_x = 1;
         item_info_y = 1;
         item_info_width = 1;
@@ -205,7 +206,7 @@ const recipe *select_crafting_recipe( int &batch_size )
         // Clear the screen of recipe data, and draw it anew
         werase( w_data );
 
-        if ( isWide ) {
+        if( isWide ) {
             werase( w_iteminfo );
         }
 
@@ -310,6 +311,9 @@ const recipe *select_crafting_recipe( int &batch_size )
             }
         }
         if( !current.empty() ) {
+            draw_can_craft_indicator( w_head, 0, *current[line] );
+            wrefresh( w_head );
+
             nc_color col = ( available[line] ? c_white : c_ltgray );
             ypos = 0;
 
@@ -352,10 +356,14 @@ const recipe *select_crafting_recipe( int &batch_size )
                 } else {
                     mvwprintz( w_data, ypos++, 30, col, _( "Your skill level: %d" ),
                                // Macs don't seem to like passing this as a class, so force it to int
-                               ( int )g->u.skillLevel( current[line]->skill_used ) );
+                               ( int )g->u.get_skill_level( current[line]->skill_used ) );
                 }
                 ypos += current[line]->print_time( w_data, ypos, 30, FULL_SCREEN_WIDTH - 30 - 1, col,
                                                    ( batch ) ? line + 1 : 1 );
+                mvwprintz( w_data, ypos++, 30, col, _( "Dark craftable? %s" ),
+                           current[line]->has_flag( "BLIND_EASY" ) ? _( "Easy" ) :
+                           current[line]->has_flag( "BLIND_HARD" ) ? _( "Hard" ) :
+                           _( "Impossible" ) );
                 ypos += current[line]->print_items( w_data, ypos, 30, col, ( batch ) ? line + 1 : 1 );
             }
             if( display_mode == 0 || display_mode == 1 ) {
@@ -389,20 +397,20 @@ const recipe *select_crafting_recipe( int &batch_size )
             }
 
             if( isWide ) {
-                if( lastid != current[line]->id ) {
-                    lastid = current[line]->id;
+                if( last_recipe != current[line] ) {
+                    last_recipe = current[line];
                     tmp = current[line]->create_result();
-                    tmp.info(true, thisItem);
+                    tmp.info( true, thisItem );
                 }
-                draw_item_info(w_iteminfo, tmp.tname(), tmp.type_name(), thisItem, dummy,
-                               scroll_pos, true, true, true, false, true);
+                draw_item_info( w_iteminfo, tmp.tname(), tmp.type_name(), thisItem, dummy,
+                                scroll_pos, true, true, true, false, true );
             }
         }
 
         draw_scrollbar( w_data, line, dataLines, recmax, 0 );
         wrefresh( w_data );
 
-        if ( isWide ) {
+        if( isWide ) {
             wrefresh( w_iteminfo );
         }
 
@@ -506,18 +514,22 @@ const recipe *select_crafting_recipe( int &batch_size )
 }
 
 // Anchors top-right
-static void draw_can_craft_indicator( WINDOW *w, int window_width, int margin_x, int margin_y )
+static void draw_can_craft_indicator( WINDOW *w, const int margin_y, const recipe &rec )
 {
-    int x_align = window_width - margin_x;
+    // Erase previous text
+    // @fixme replace this hack by proper solution (based on max width of possible content)
+    right_print( w, margin_y + 1, 1, c_black, "        " );
     // Draw text
-    mvwprintz( w, margin_y, x_align - utf8_width( _( "can craft:" ) ), c_ltgray, _( "can craft:" ) );
-    if( g->u.can_see_to_craft() ) {
-        mvwprintz( w, margin_y + 1, x_align - 1 - utf8_width( _( "too dark" ) ),  i_red  ,
-                   _( "too dark" ) );
-    } else if( g->u.has_moral_to_craft() ) {
-        mvwprintz( w, margin_y + 1, x_align - 1 - utf8_width( _( "too sad" ) ),  i_red  , _( "too sad" ) );
+    right_print( w, margin_y, 1, c_ltgray, "%s", _( "can craft:" ) );
+    if( g->u.lighting_craft_speed_multiplier( rec ) == 0.0f ) {
+        right_print( w, margin_y + 1, 1, i_red, "%s", _( "too dark" ) );
+    } else if( !g->u.has_morale_to_craft() ) {
+        right_print( w, margin_y + 1, 1, i_red, "%s", _( "too sad" ) );
+    } else if( g->u.lighting_craft_speed_multiplier( rec ) < 1.0f ) {
+        right_print( w, margin_y + 1, 1, i_yellow, _( "slow %d%%" ),
+                     int( g->u.lighting_craft_speed_multiplier( rec ) * 100 ) );
     } else {
-        mvwprintz( w, margin_y + 1, x_align - 1 - utf8_width( _( "yes" ) ),  i_green  , _( "yes" ) );
+        right_print( w, margin_y + 1, 1, i_green, "%s", _( "yes" ) );
     }
 }
 
@@ -531,9 +543,6 @@ static void draw_recipe_tabs( WINDOW *w, std::string tab, TAB_MODE mode )
 
     mvwputch( w, 2,  0, BORDER_COLOR, LINE_OXXO ); // |^
     mvwputch( w, 2, width - 1, BORDER_COLOR, LINE_OOXX ); // ^|
-
-    // Draw a "can craft" indicator
-    draw_can_craft_indicator( w, width, 1, 0 );
 
     switch( mode ) {
         case NORMAL: {
@@ -617,7 +626,7 @@ int recipe::print_items( WINDOW *w, int ypos, int xpos, nc_color col, int batch 
 void recipe::print_item( WINDOW *w, int ypos, int xpos, nc_color col, const byproduct &bp,
                          int batch ) const
 {
-    item it( bp.result, calendar::turn, false );
+    item it( bp.result, calendar::turn, item::default_charges_tag{} );
     std::string str = string_format( _( "> %d %s" ), ( it.charges > 0 ) ? bp.amount : bp.amount * batch,
                                      it.tname().c_str() );
     if( it.charges > 0 ) {
@@ -730,15 +739,15 @@ void pick_recipes( const inventory &crafting_inv,
             }
             if( filter != "" ) {
                 if( ( search_name && !lcmatch( item::nname( rec->result ), filter ) )
-                    || ( search_tool && !lcmatch_any( rec->requirements.tools, filter ) )
-                    || ( search_component && !lcmatch_any( rec->requirements.components, filter ) ) ) {
+                    || ( search_tool && !lcmatch_any( rec->requirements.get_tools(), filter ) )
+                    || ( search_component && !lcmatch_any( rec->requirements.get_components(), filter ) ) ) {
                     continue;
                 }
                 bool match_found = false;
                 if( search_result_qualities ) {
-                    itype *it = item::find_type( rec->result );
+                    const itype *it = item::find_type( rec->result );
                     for( auto &quality : it->qualities ) {
-                        if( lcmatch( quality::get_name( quality.first ), filter ) ) {
+                        if( lcmatch( quality.first.obj().name, filter ) ) {
                             match_found = true;
                             break;
                         }
@@ -748,7 +757,7 @@ void pick_recipes( const inventory &crafting_inv,
                     }
                 }
                 if( search_qualities ) {
-                    for( auto quality_reqs : rec->requirements.qualities ) {
+                    for( auto quality_reqs : rec->requirements.get_qualities() ) {
                         for( auto quality : quality_reqs ) {
                             if( lcmatch( quality.to_string(), filter ) ) {
                                 match_found = true;

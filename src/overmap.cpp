@@ -1,14 +1,7 @@
-#include <stdlib.h>
-#include <time.h>
-#include <math.h>
-#include <fstream>
-#include <vector>
-#include <sstream>
-#include <cstring>
-#include <ostream>
-#include <queue>
-
 #include "overmap.h"
+
+#include "coordinate_conversions.h"
+#include "overmap_types.h"
 #include "rng.h"
 #include "line.h"
 #include "game.h"
@@ -23,7 +16,7 @@
 #include "json.h"
 #include "mapdata.h"
 #include "mapgen.h"
-#include "mapsharing.h"
+#include "cata_utility.h"
 #include "uistate.h"
 #include "mongroup.h"
 #include "mtype.h"
@@ -35,6 +28,17 @@
 #include "weather.h"
 #include "ui.h"
 #include "mapbuffer.h"
+#include "map_iterator.h"
+
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <cstring>
+#include <ostream>
+#include <queue>
 
 #define dbg(x) DebugLog((DebugLevel)(x),D_MAP_GEN) << __FILE__ << ":" << __LINE__ << ": "
 
@@ -160,8 +164,6 @@ void load_overmap_specials(JsonObject &jo)
     }
 
     spec.rotatable = jo.get_bool("rotate", false);
-    spec.unique = jo.get_bool("unique", false);
-    spec.required = jo.get_bool("required", false);
 
     if(jo.has_object("spawns")) {
         JsonObject spawns = jo.get_object("spawns");
@@ -1115,6 +1117,22 @@ point overmap::display_notes(int z)
     return result;
 }
 
+const scent_trace &overmap::scent_at( const tripoint &loc ) const
+{
+    const static scent_trace null_scent;
+    const auto &scent_found = scents.find( loc );
+    if( scent_found != scents.end() ) {
+        return scent_found->second;
+    }
+    return null_scent;
+}
+
+void overmap::set_scent( const tripoint &loc, scent_trace &new_scent )
+{
+    // TODO: increase strength of scent trace when applied repeatedlu in a short timespan.
+    scents[loc] = new_scent;
+}
+
 void overmap::generate(const overmap *north, const overmap *east,
                        const overmap *south, const overmap *west)
 {
@@ -1376,9 +1394,11 @@ bool overmap::generate_sub(int const z)
             for( auto &elem : skip_above ) {
                 if( oter_above == elem ) {
                     skipme = true;
+                    break;
                 }
             }
-            if (skipme) {
+            if( skipme )
+            {
                 continue;
             }
 
@@ -1430,15 +1450,13 @@ bool overmap::generate_sub(int const z)
                 // technically not all finales need a sub level,
                 // but at this point we don't know
                 requires_sub = true;
-            } else if (oter_above == "mine_finale") {
-                for (int x = i - 1; x <= i + 1; x++) {
-                    for (int y = j - 1; y <= j + 1; y++) {
-                        ter(x, y, z) = "spiral";
-                    }
+            } else if( oter_above == "mine_finale" ) {
+                for( auto &p : g->m.points_in_radius( tripoint( i, j, z ), 1, 0 ) ) {
+                    ter( p.x, p.y, p.z ) = "spiral";
                 }
-                ter(i, j, z) = "spiral_hub";
-                add_mon_group(mongroup( mongroup_id( "GROUP_SPIRAL" ), i * 2, j * 2, z, 2, 200));
-            } else if (oter_above == "silo") {
+                ter( i, j, z ) = "spiral_hub";
+                add_mon_group( mongroup( mongroup_id( "GROUP_SPIRAL" ), i * 2, j * 2, z, 2, 200 ) );
+            } else if ( oter_above == "silo" ) {
                 if (rng(2, 7) < abs(z) || rng(2, 7) < abs(z)) {
                     ter(i, j, z) = "silo_finale";
                 } else {
@@ -1466,7 +1484,7 @@ bool overmap::generate_sub(int const z)
         }
     }
     for (auto &i : ice_lab_points) {
-        bool ice_lab = build_ice_lab(i.x, i.y, z, i.s);
+        bool ice_lab = build_lab(i.x, i.y, z, i.s, true);
         requires_sub |= ice_lab;
         if (!ice_lab && ter(i.x, i.y, z) == "ice_lab_core") {
             ter(i.x, i.y, z) = "ice_lab";
@@ -1564,7 +1582,7 @@ std::tuple<char, nc_color, size_t> get_note_display_info(std::string const &note
     return result;
 }
 
-bool get_weather_glyph( point const &pos, nc_color &ter_color, long &ter_sym )
+static bool get_weather_glyph( point const &pos, nc_color &ter_color, long &ter_sym )
 {
     // Weather calculation is a bit expensive, so it's cached here.
     static std::map<point, weather_type> weather_cache;
@@ -1618,6 +1636,31 @@ bool get_weather_glyph( point const &pos, nc_color &ter_color, long &ter_sym )
     return true;
 }
 
+static bool get_scent_glyph( const tripoint &pos, nc_color &ter_color, long &ter_sym )
+{
+    auto possible_scent = overmap_buffer.scent_at( pos );
+    if( possible_scent.creation_turn >= 0 ) {
+        color_manager &color_list = get_all_colors();
+        int i = 0;
+        int scent_age = calendar::turn - possible_scent.creation_turn;
+        while( i < num_colors && scent_age > 0 ) {
+            i++;
+            scent_age /= 10;
+        }
+        ter_color = color_list.get( (color_id)i );
+        int scent_strength = possible_scent.initial_strength;
+        char c = '0';
+        while( c <= '9' && scent_strength > 0 ) {
+            c++;
+            scent_strength /= 10;
+        }
+        ter_sym = c;
+        return true;
+    }
+    // but it makes no scents!
+    return false;
+}
+
 void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
                    const tripoint &orig, bool blink, bool show_explored,
                    input_context *inp_ctxt, const draw_data_t &data)
@@ -1636,10 +1679,6 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
     // seen status & terrain of center position
     bool csee = false;
     oter_id ccur_ter = "";
-    // used inside the loop
-    oter_id cur_ter = ot_null;
-    nc_color ter_color;
-    long ter_sym;
     // sight_points is hoisted for speed reasons.
     int sight_points = g->u.overmap_sight_range( g->light_level( g->u.posz() ) );
 
@@ -1649,7 +1688,7 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
 
     if( data.iZoneIndex != -1 ) {
         sZoneName = zones.zones[data.iZoneIndex].get_name();
-        tripointZone = overmapbuffer::ms_to_omt_copy(zones.zones[data.iZoneIndex].get_center_point());
+        tripointZone = ms_to_omt_copy(zones.zones[data.iZoneIndex].get_center_point());
     }
 
     // If we're debugging monster groups, find the monster group we've selected
@@ -1688,7 +1727,7 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
                     oter = rotate( oter, uistate.omedit_rotation );
                 }
 
-                special_cache.insert( std::make_pair( 
+                special_cache.insert( std::make_pair(
                     point( rp.x, rp.y ),
                     std::make_pair( oter.t().sym, oter.t().color ) ) );
 
@@ -1704,6 +1743,10 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
         for (int j = 0; j < om_map_height; ++j) {
             const int omx = i + offset_x;
             const int omy = j + offset_y;
+
+            oter_id cur_ter = ot_null;
+            nc_color ter_color = c_black;
+            long ter_sym = ' ';
 
             const bool see = overmap_buffer.seen(omx, omy, z);
             if (see) {
@@ -1721,6 +1764,7 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
                 ter_sym   = '@';
             } else if( data.debug_weather && get_weather_glyph( point( omx, omy ), ter_color, ter_sym ) ) {
                 // ter_color and ter_sym have been set by get_weather_glyph
+            } else if( data.debug_scent && get_scent_glyph( cur_pos, ter_color, ter_sym ) ) {
             } else if( blink && has_target && omx == target.x && omy == target.y ) {
                 // Mission target, display always, player should know where it is anyway.
                 ter_color = c_red;
@@ -1766,16 +1810,16 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
                 }
                 // Nope, look in the hash map next
                 if (!info) {
-                    auto const it = otermap.find(cur_ter);
-                    if (it == otermap.end()) {
-                        debugmsg("Bad ter %s (%d, %d)", cur_ter.c_str(), omx, omy);
+                    auto const it = otermap.find( cur_ter );
+                    if( it == otermap.end() ) {
+                        debugmsg( "Bad ter %s (%d, %d)", cur_ter.c_str(), omx, omy );
                         ter_color = c_red;
                         ter_sym   = '?';
                     } else {
                         // cache the new value
                         info = &it->second;
-                        cache[cache_next] = std::make_pair(cur_ter, info);
-                        cache_next = (cache_next + 1) % cache_size;
+                        cache[cache_next] = std::make_pair( cur_ter, info );
+                        cache_next = ( cache_next + 1 ) % cache_size;
                     }
                 }
                 // Ok, we found something
@@ -1794,7 +1838,7 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
                 // Convert to position within overmap
                 int localx = omx * 2;
                 int localy = omy * 2;
-                overmapbuffer::sm_to_om_remain(localx, localy);
+                sm_to_om_remain(localx, localy);
 
                 if(mgroup && mgroup->target.x / 2 == localx / 2 && mgroup->target.y / 2 == localy / 2) {
                     ter_color = c_red;
@@ -1842,8 +1886,8 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
                     }
                 }
                 // Highlight areas that already have been generated
-                if( MAPBUFFER.lookup_submap( 
-                        overmapbuffer::omt_to_sm_copy( tripoint( omx, omy, z ) ) ) ) {
+                if( MAPBUFFER.lookup_submap(
+                        omt_to_sm_copy( tripoint( omx, omy, z ) ) ) ) {
                     ter_color = red_background( ter_color );
                 }
             }
@@ -2018,11 +2062,11 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
                   _(" - Toggle Explored")).c_str());
         mvwprintz(wbar, 23, 1, c_magenta, (inp_ctxt->get_desc("HELP_KEYBINDINGS") +
                   _(" - Change keys")).c_str());
-        fold_and_print(wbar, 24, 1, 27, c_magenta, ("m, " + inp_ctxt->get_desc("QUIT") +
+        fold_and_print(wbar, 24, 1, 27, c_magenta, (inp_ctxt->get_desc("QUIT") +
                        _(" - Return to game")).c_str());
     }
     point omt(cursx, cursy);
-    const point om = overmapbuffer::omt_to_om_remain(omt);
+    const point om = omt_to_om_remain(omt);
     mvwprintz(wbar, getmaxy(wbar) - 1, 1, c_red,
               _("LEVEL %i, %d'%d, %d'%d"), z, om.x, omt.x, om.y, omt.y);
 
@@ -2034,8 +2078,9 @@ void overmap::draw(WINDOW *w, WINDOW *wbar, const tripoint &center,
         mvwputch(w, om_half_height+1, om_half_width+1, c_ltgray, LINE_XOOX);
     }
     // Done with all drawing!
-    wrefresh(w);
     wrefresh(wbar);
+    wmove( w, om_half_height, om_half_width );
+    wrefresh(w);
 }
 
 tripoint overmap::draw_overmap()
@@ -2061,6 +2106,13 @@ tripoint overmap::draw_weather()
 {
     draw_data_t data;
     data.debug_weather = true;
+    return draw_overmap( g->u.global_omt_location(), data );
+}
+
+tripoint overmap::draw_scents()
+{
+    draw_data_t data;
+    data.debug_scent = true;
     return draw_overmap( g->u.global_omt_location(), data );
 }
 
@@ -2157,13 +2209,14 @@ tripoint overmap::draw_overmap(const tripoint &orig, const draw_data_t &data)
             const std::string new_note = string_input_popup(
                 _("Note (X:TEXT for custom symbol, G; for color):"),
                 45, old_note, color_notes); // 45 char max
-            if(old_note != new_note) {
-                overmap_buffer.add_note(curs, new_note);
+            if( new_note.empty() && !old_note.empty() ) {
+                // do nothing, the player should be using [D]elete
+            } else if( old_note != new_note ) {
+                overmap_buffer.add_note( curs, new_note );
             }
-        } else if(action == "DELETE_NOTE") {
-            if (overmap_buffer.has_note(curs) &&
-                query_yn(_("Really delete note?"))) {
-                overmap_buffer.delete_note(curs);
+        } else if( action == "DELETE_NOTE" ) {
+            if( overmap_buffer.has_note( curs ) && query_yn( _( "Really delete note?" ) ) ) {
+                overmap_buffer.delete_note( curs );
             }
         } else if (action == "LIST_NOTES") {
             const point p = display_notes(curs.z);
@@ -2385,10 +2438,6 @@ tripoint overmap::draw_overmap(const tripoint &orig, const draw_data_t &data)
         } else if (action == "ANY_INPUT") {
             if (uistate.overmap_blinking) {
                 uistate.overmap_show_overlays = !uistate.overmap_show_overlays;
-            }
-            input_event e = ictxt.get_raw_input();
-            if(e.type == CATA_INPUT_KEYBOARD && e.get_first_input() == 'm') {
-                action = "QUIT";
             }
         }
     } while (action != "QUIT" && action != "CONFIRM");
@@ -2645,7 +2694,7 @@ void overmap::place_forest()
                 cities.begin(),
                 cities.end(),
                 [&](const city &c) {
-                    return 
+                    return
                         // is this city too close?
                         trig_dist(forx, fory, c.x, c.y) - fors / 2 < c.s &&
                         // occasionally accept near a city if we've been failing
@@ -2653,7 +2702,7 @@ void overmap::place_forest()
                 }
             );
             if(iter == cities.end()) { // every city was too close
-                break; 
+                break;
             }
         } while( tries-- );
 
@@ -2825,7 +2874,7 @@ void overmap::place_cities()
     const double omts_per_city = (op_city_size*2+1) * (op_city_size*2+1) * 3 / 4;
 
     // how many cities on this overmap?
-    const int NUM_CITIES = 
+    const int NUM_CITIES =
         roll_remainder(omts_per_overmap * city_map_coverage_ratio / omts_per_city);
 
     // place a seed for NUM_CITIES cities, and maybe one more
@@ -2973,127 +3022,82 @@ void overmap::make_road(int x, int y, int cs, int dir, city town)
     }
 }
 
-bool overmap::build_lab(int x, int y, int z, int s)
+bool overmap::build_lab( int x, int y, int z, int s, bool ice )
 {
     std::vector<point> generated_lab;
-    ter(x, y, z) = "lab";
-    for (int n = 0; n <= 1; n++) { // Do it in two passes to allow diagonals
-        for (int i = 1; i <= s; i++) {
-            for (int lx = x - i; lx <= x + i; lx++) {
-                for (int ly = y - i; ly <= y + i; ly++) {
-                    if ((ter(lx - 1, ly, z) == "lab" ||
-                         ter(lx + 1, ly, z) == "lab" ||
-                         ter(lx, ly - 1, z) == "lab" ||
-                         ter(lx, ly + 1, z) == "lab") && one_in(i)) {
-                        ter(lx, ly, z) = "lab";
-                        generated_lab.push_back(point(lx, ly));
-                    }
+    std::string labt = ice ? "ice_lab" : "lab";
+    ter( x, y, z ) = labt;
+    generated_lab.push_back( point( x, y ) );
+
+    // maintain a list of potential new lab maps
+    // grows outwards from previously placed lab maps
+    std::set<point> candidates;
+    candidates.insert( {point( x - 1, y ), point( x + 1, y ), point( x, y - 1 ), point( x, y + 1 )} );
+    while( candidates.size() ) {
+        auto cand = candidates.begin();
+        const int &cx = cand->x;
+        const int &cy = cand->y;
+        int dist = abs( x - cx ) + abs( y - cy );
+        if( dist <= s * 2 ) { // increase radius to compensate for sparser new algorithm
+            if( one_in( dist / 2 + 1 ) ) { // odds diminish farther away from the stairs
+                ter( cx, cy, z ) = labt;
+                generated_lab.push_back( *cand );
+                // add new candidates, don't backtrack
+                if( ter( cx - 1, cy, z ) != labt && abs( x - cx + 1 ) + abs( y - cy ) > dist ) {
+                    candidates.insert( point( cx - 1, cy ) );
+                }
+                if( ter( cx + 1, cy, z ) != labt && abs( x - cx - 1 ) + abs( y - cy ) > dist ) {
+                    candidates.insert( point( cx + 1, cy ) );
+                }
+                if( ter( cx, cy - 1, z ) != labt && abs( x - cx ) + abs( y - cy + 1 ) > dist ) {
+                    candidates.insert( point( cx, cy - 1 ) );
+                }
+                if( ter( cx, cy + 1, z ) != labt && abs( x - cx ) + abs( y - cy - 1 ) > dist ) {
+                    candidates.insert( point( cx, cy + 1 ) );
                 }
             }
         }
+        candidates.erase( cand );
     }
 
     bool generate_stairs = true;
     for( auto &elem : generated_lab ) {
-        if( ter( elem.x, elem.y, z + 1 ) == "lab_stairs" ) {
+        if( ter( elem.x, elem.y, z + 1 ) == ( labt + "_stairs" ) ) {
             generate_stairs = false;
         }
     }
-    if (generate_stairs && !generated_lab.empty()) {
+    if( generate_stairs && !generated_lab.empty() ) {
         const point p = random_entry( generated_lab );
-        ter(p.x, p.y, z + 1) = "lab_stairs";
+        ter( p.x, p.y, z + 1 ) = ( labt + "_stairs" );
     }
 
-    ter(x, y, z) = "lab_core";
+    ter( x, y, z ) = labt + "_core";
     int numstairs = 0;
-    if (s > 0) { // Build stairs going down
-        while (!one_in(6)) {
+    if( s > 0 ) { // Build stairs going down
+        while( !one_in( 6 ) ) {
             int stairx, stairy;
             int tries = 0;
             do {
-                stairx = rng(x - s, x + s);
-                stairy = rng(y - s, y + s);
+                stairx = rng( x - s, x + s );
+                stairy = rng( y - s, y + s );
                 tries++;
-            } while (ter(stairx, stairy, z) != "lab" && tries < 15);
-            if (tries < 15) {
-                ter(stairx, stairy, z) = "lab_stairs";
+            } while( ter( stairx, stairy, z ) != labt && tries < 15 );
+            if( tries < 15 ) {
+                ter( stairx, stairy, z ) = ( labt + "_stairs" );
                 numstairs++;
             }
         }
     }
-    if (numstairs == 0) { // This is the bottom of the lab;  We need a finale
+    if( numstairs == 0 ) { // This is the bottom of the lab;  We need a finale
         int finalex, finaley;
         int tries = 0;
         do {
-            finalex = rng(x - s, x + s);
-            finaley = rng(y - s, y + s);
+            finalex = rng( x - s, x + s );
+            finaley = rng( y - s, y + s );
             tries++;
-        } while (tries < 15 && ter(finalex, finaley, z) != "lab"
-                 && ter(finalex, finaley, z) != "lab_core");
-        ter(finalex, finaley, z) = "lab_finale";
-    }
-
-    return numstairs > 0;
-}
-
-bool overmap::build_ice_lab(int x, int y, int z, int s)
-{
-    std::vector<point> generated_ice_lab;
-    ter(x, y, z) = "ice_lab";
-    for (int n = 0; n <= 1; n++) { // Do it in two passes to allow diagonals
-        for (int i = 1; i <= s; i++) {
-            for (int lx = x - i; lx <= x + i; lx++) {
-                for (int ly = y - i; ly <= y + i; ly++) {
-                    if ((ter(lx - 1, ly, z) == "ice_lab" ||
-                         ter(lx + 1, ly, z) == "ice_lab" ||
-                         ter(lx, ly - 1, z) == "ice_lab" ||
-                         ter(lx, ly + 1, z) == "ice_lab") && one_in(i)) {
-                        ter(lx, ly, z) = "ice_lab";
-                        generated_ice_lab.push_back(point(lx, ly));
-                    }
-                }
-            }
-        }
-    }
-
-    bool generate_stairs = true;
-    for( auto &elem : generated_ice_lab ) {
-        if( ter( elem.x, elem.y, z + 1 ) == "ice_lab_stairs" ) {
-            generate_stairs = false;
-        }
-    }
-    if (generate_stairs && !generated_ice_lab.empty()) {
-        const point p = random_entry( generated_ice_lab );
-        ter(p.x, p.y, z + 1) = "ice_lab_stairs";
-    }
-
-    ter(x, y, z) = "ice_lab_core";
-    int numstairs = 0;
-    if (s > 0) { // Build stairs going down
-        while (!one_in(6)) {
-            int stairx, stairy;
-            int tries = 0;
-            do {
-                stairx = rng(x - s, x + s);
-                stairy = rng(y - s, y + s);
-                tries++;
-            } while (ter(stairx, stairy, z) != "ice_lab" && tries < 15);
-            if (tries < 15) {
-                ter(stairx, stairy, z) = "ice_lab_stairs";
-                numstairs++;
-            }
-        }
-    }
-    if (numstairs == 0) { // This is the bottom of the ice_lab;  We need a finale
-        int finalex, finaley;
-        int tries = 0;
-        do {
-            finalex = rng(x - s, x + s);
-            finaley = rng(y - s, y + s);
-            tries++;
-        } while (tries < 15 && ter(finalex, finaley, z) != "ice_lab"
-                 && ter(finalex, finaley, z) != "ice_lab_core");
-        ter(finalex, finaley, z) = "ice_lab_finale";
+        } while( tries < 15 && ter( finalex, finaley, z ) != labt
+                  && ter( finalex, finaley, z ) != ( labt + "_core" ) );
+        ter( finalex, finaley, z ) = labt + "_finale";
     }
 
     return numstairs > 0;
@@ -3176,21 +3180,19 @@ void overmap::build_tunnel(int x, int y, int z, int s, int dir)
     build_tunnel(next.x, next.y, z, s - 1, dir);
 }
 
-bool overmap::build_slimepit(int x, int y, int z, int s)
+bool overmap::build_slimepit( int x, int y, int z, int s )
 {
     bool requires_sub = false;
-    for (int n = 1; n <= s; n++) {
-        for (int i = x - n; i <= x + n; i++) {
-            for (int j = y - n; j <= y + n; j++) {
-                if (rng(1, s * 2) >= n) {
-                    chip_rock( i, j, z );
-                    if (one_in(8) && z > -OVERMAP_DEPTH) {
-                        ter(i, j, z) = "slimepit_down";
-                        requires_sub = true;
-                    } else {
-                        ter(i, j, z) = "slimepit";
-                    }
-                }
+    tripoint origin( x, y, z );
+    for( auto p : g->m.points_in_radius( origin, s + z + 1, 0 ) ) {
+        int dist = square_dist( x, y, p.x, p.y );
+        if( one_in( 2 * dist ) ) {
+            chip_rock( p.x, p.y, p.z );
+            if( one_in( 8 ) && z > -OVERMAP_DEPTH ) {
+                ter( p.x, p.y, p.z ) = "slimepit_down";
+                requires_sub = true;
+            } else {
+                ter( p.x, p.y, p.z ) = "slimepit";
             }
         }
     }
@@ -3908,7 +3910,7 @@ bool overmap::allow_special(const overmap_special& special, const tripoint& p, i
     bool passed = false;
     for( const auto& location : special.locations ) {
         // check each location, if one returns true, then return true, else return false
-        // never, always, water, land, forest, wilderness, by_hiway
+        // never, always, water, land, forest, field, wilderness, by_hiway
         // false, true,   river, !river, forest, forest/field, special
         std::list<std::string> allowed_terrains;
         std::list<std::string> disallowed_terrains;
@@ -3924,6 +3926,8 @@ bool overmap::allow_special(const overmap_special& special, const tripoint& p, i
             disallowed_terrains.push_back("road");
         } else if(location == "forest") {
             allowed_terrains.push_back("forest");
+        } else if(location == "field") {
+            allowed_terrains.push_back("field");
         } else if(location == "wilderness") {
             allowed_terrains.push_back("forest");
             allowed_terrains.push_back("field");
@@ -4307,22 +4311,16 @@ void overmap::open()
 // Note: this may throw io errors from std::ofstream
 void overmap::save() const
 {
-    std::ofstream fout;
-    fout.exceptions(std::ios::badbit | std::ios::failbit);
     std::string const plrfilename = overmapbuffer::player_filename(loc.x, loc.y);
     std::string const terfilename = overmapbuffer::terrain_filename(loc.x, loc.y);
 
-    // Player specific data
-    fout.open(plrfilename.c_str());
-    serialize_view( fout );
-    fout.close();
-    // World terrain data
-    fopen_exclusive(fout, terfilename.c_str(), std::ios_base::trunc);
-    if(!fout.is_open()) {
-        return;
-    }
-    serialize( fout );
-    fclose_exclusive(fout, terfilename.c_str());
+    ofstream_wrapper fout_player( plrfilename );
+    serialize_view( fout_player );
+    fout_player.close();
+
+    ofstream_wrapper_exclusive fout_terrain( terfilename );
+    serialize( fout_terrain );
+    fout_terrain.close();
 }
 
 
@@ -4425,6 +4423,7 @@ int oter_id::compare(size_t pos, size_t len, const char *s, size_t n) const
 oter_id::oter_id(const std::string &v)
 {
     std::unordered_map<std::string, oter_t>::const_iterator it = otermap.find(v);
+    _val = 0;
     if ( it == otermap.end() ) {
         debugmsg("not found: %s", v.c_str());
     } else {
@@ -4436,6 +4435,7 @@ oter_id::oter_id(const std::string &v)
 oter_id::oter_id(const char *v)
 {
     std::unordered_map<std::string, oter_t>::const_iterator it = otermap.find(v);
+    _val = 0;
     if ( it == otermap.end() ) {
         debugmsg("not found: %s", v);
     } else {
@@ -4452,7 +4452,7 @@ const char *oter_id::c_str() const
 
 void groundcover_extra::setup()   // fixme return bool for failure
 {
-    default_ter = terfind( default_ter_str );
+    default_ter = ter_id( default_ter_str );
 
     ter_furn_id tf_id;
     int wtotal = 0;
@@ -4465,8 +4465,9 @@ void groundcover_extra::setup()   // fixme return bool for failure
         if ( it->second < 0.0001 ) {
             continue;
         }
-        if ( termap.find( it->first ) != termap.end() ) {
-            tf_id.ter = termap[ it->first ].loadid;
+        const ter_str_id tid( it->first );
+        if( tid.is_valid() ) {
+            tf_id.ter = tid.id();
         } else if ( furnmap.find( it->first ) != furnmap.end() ) {
             tf_id.furn = furnmap[ it->first ].loadid;
         } else {
@@ -4484,8 +4485,10 @@ void groundcover_extra::setup()   // fixme return bool for failure
         if ( it->second < 0.0001 ) {
             continue;
         }
-        if ( termap.find( it->first ) != termap.end() ) {
-            tf_id.ter = termap[ it->first ].loadid;
+        const ter_str_id tid( it->first );
+
+        if( tid.is_valid() ) {
+            tf_id.ter = tid.id();
         } else if ( furnmap.find( it->first ) != furnmap.end() ) {
             tf_id.furn = furnmap[ it->first ].loadid;
         } else {
@@ -4523,8 +4526,11 @@ ter_furn_id groundcover_extra::pick( bool boosted ) const
 void regional_settings::setup()
 {
     if ( default_groundcover_str != NULL ) {
-        default_groundcover.primary = terfind(default_groundcover_str->primary_str);
-        default_groundcover.secondary = terfind(default_groundcover_str->secondary_str);
+        const ter_str_id primary( default_groundcover_str->primary_str );
+        const ter_str_id secondary( default_groundcover_str->secondary_str );
+
+        default_groundcover.primary = primary.id();
+        default_groundcover.secondary = secondary.id();
         field_coverage.setup();
         city_spec.shops.apply(&setup_oter);
         city_spec.parks.apply(&setup_oter);

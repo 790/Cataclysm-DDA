@@ -7,14 +7,12 @@
   "skill_used": "fabrication",
   "difficulty": 2,
   "time": 5000,
-  "reversible": false,
   "autolearn": true,
   "tools": [
     [ [ "tongs", -1 ] ],
     [ [ "crucible", -1 ] ],
     [
       [ "forge", 50 ],
-      [ "char_forge", 10 ],
       [ "oxy_torch", 10 ]
     ]
   ],

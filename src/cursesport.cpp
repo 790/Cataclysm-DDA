@@ -275,6 +275,16 @@ int refresh(void)
     return wrefresh(mainwin);
 }
 
+int wredrawln( WINDOW* /*win*/, int /*beg_line*/, int /*num_lines*/ ) {
+    /**
+     * This is a no-op for non-curses implementations. wincurse.cpp doesn't
+     * use windows console for rendering, and sdltiles.cpp doesn't either.
+     * If we had a console-based windows implementation, we'd need to do
+     * something here to force the line to redraw.
+     */
+    return OK;
+}
+
 int getch(void)
 {
     return wgetch(mainwin);
@@ -344,7 +354,7 @@ inline int fill(const char *&fmt, int &len, std::string &target)
     const char *tmpptr = fmt; // pointer for UTF8_getch, which increments it
     int tmplen = len;
     while( tmplen > 0 ) {
-        const unsigned ch = UTF8_getch(&tmpptr, &tmplen);
+        const uint32_t ch = UTF8_getch(&tmpptr, &tmplen);
         // UNKNOWN_UNICODE is most likely a (vertical/horizontal) line or similar
         const int cw = (ch == UNKNOWN_UNICODE) ? 1 : mk_wcwidth(ch);
         if( cw > 0 && dlen > 0 ) {

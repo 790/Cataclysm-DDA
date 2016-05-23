@@ -10,8 +10,12 @@ struct tripoint;
 
 enum action_id : int {
     ACTION_NULL = 0,
+    // Mouse
+    ACTION_SELECT,
+    ACTION_SEC_SELECT,
     // Movement
     ACTION_PAUSE,
+    ACTION_TIMEOUT,
     ACTION_MOVE_N,
     ACTION_MOVE_NE,
     ACTION_MOVE_E,
@@ -61,6 +65,7 @@ enum action_id : int {
     ACTION_PICK_STYLE,
     ACTION_RELOAD,
     ACTION_UNLOAD,
+    ACTION_MEND,
     ACTION_THROW,
     ACTION_FIRE,
     ACTION_FIRE_BURST,
@@ -105,6 +110,7 @@ enum action_id : int {
     ACTION_ZOOM_IN,
     ACTION_ACTIONMENU,
     ACTION_ITEMACTION,
+    ACTION_TOGGLE_PIXEL_MINIMAP,
     NUM_ACTIONS
 };
 
@@ -117,6 +123,7 @@ std::string default_keymap_txt();
 std::vector<char> keys_bound_to( action_id act );
 action_id look_up_action( std::string ident );
 std::string action_ident( action_id );
+bool can_action_change_worldstate( const action_id act );
 // Lookup key in keymap, return the mapped action or ACTION_NULL
 action_id action_from_key( char ch );
 // Get input from the player to choose an adjacent tile (for examine() etc)

@@ -36,7 +36,6 @@ bool fungus_bristle     (monster *z); // Fungal hedgrow rake & inject
 bool fungus_growth      (monster *z); // Sporeling -> fungal creature
 bool fungus_sprout      (monster *z); // Grow fungal walls
 bool fungus_fortify     (monster *z); // Grow fungal hedgerows
-bool leap               (monster *z);
 bool impale             (monster *z);
 bool dermatik           (monster *z);
 bool dermatik_growth    (monster *z);
@@ -56,10 +55,6 @@ bool stare              (monster *z);
 bool fear_paralyze      (monster *z);
 bool photograph         (monster *z);
 bool tazer              (monster *z);
-bool smg                (monster *z); // Automated MP5
-bool laser              (monster *z);
-bool rifle_tur          (monster *z); // Automated M4
-bool bmg_tur            (monster *z); // Automated M107 >:-D
 bool flamethrower       (monster *z);
 bool searchlight        (monster *z);
 bool copbot             (monster *z);
@@ -69,7 +64,6 @@ bool ratking            (monster *z);
 bool generator          (monster *z);
 bool upgrade            (monster *z);
 bool breathe            (monster *z);
-bool bite               (monster *z);
 bool brandish           (monster *z);
 bool flesh_golem        (monster *z);
 bool lunge              (monster *z);
@@ -98,5 +92,6 @@ void flame              (monster *z, Creature *target);
 
 bool dodge_check        (monster *z, Creature *target);
 } //namespace mattack
+
 
 #endif

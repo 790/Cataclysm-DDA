@@ -45,6 +45,8 @@ int OVERMAP_WINDOW_WIDTH;
 
 
 scrollingcombattext SCT;
+extern bool tile_iso;
+extern bool use_tiles;
 
 void delwin_functor::operator()( WINDOW *w ) const {
     if( w == nullptr ) {
@@ -121,9 +123,9 @@ int fold_and_print(WINDOW *w, int begin_y, int begin_x, int width, nc_color base
     return fold_and_print(w, begin_y, begin_x, width, base_color, text);
 }
 
-void print_colored_text( WINDOW *w, int x, int y, nc_color &color, nc_color base_color, const std::string &text )
+void print_colored_text( WINDOW *w, int y, int x, nc_color &color, nc_color base_color, const std::string &text )
 {
-    wmove( w, x, y );
+    wmove( w, y, x );
     const auto color_segments = split_by_color( text );
     for( auto seg : color_segments ) {
         if( seg.empty() ) {
@@ -299,8 +301,7 @@ void multipage(WINDOW *w, std::vector<std::string> text, std::string caption, in
         if (begin_y + (int)next_paragraph.size() > height - ((i + 1) < (int)text.size() ? 1 : 0)) {
             // Next page
             i--;
-            const std::string cont_str = _("Press any key for more...");
-            mvwprintw(w, height - 1, center_text_pos(cont_str.c_str(), 0, width - 1), cont_str.c_str());
+            center_print( w, height - 1, c_ltgray, _( "Press any key for more..." ) );
             wrefresh(w);
             refresh();
             getch();
@@ -351,6 +352,20 @@ void center_print(WINDOW *w, int y, nc_color FG, const char *mes, ...)
         x = (window_width - string_width) / 2;
     }
     mvwprintz(w, y, x, FG, "%s", text.c_str());
+}
+
+int right_print( WINDOW *w, const int line, const int right_indent, const nc_color FG,
+                 const char *mes, ... )
+{
+    va_list ap;
+    va_start( ap, mes );
+    utf8_wrapper text = vstring_format( mes, ap );
+    va_end( ap );
+
+    const int available_width = std::max( 1, getmaxx( w ) - right_indent );
+    const int x = std::max( 0, available_width - ( int )text.display_width() );
+    trim_and_print( w, line, x, available_width, FG, "%s", text.c_str() );
+    return x;
 }
 
 void mvputch(int y, int x, nc_color FG, const std::string &ch)
@@ -429,17 +444,6 @@ void mvwputch_hi(WINDOW *w, int y, int x, nc_color FG, const std::string &ch)
     wattroff(w, HC);
 }
 
-void mvprintz(int y, int x, nc_color FG, const char *mes, ...)
-{
-    va_list ap;
-    va_start(ap, mes);
-    const std::string text = vstring_format(mes, ap);
-    va_end(ap);
-    attron(FG);
-    mvprintw(y, x, "%s", text.c_str());
-    attroff(FG);
-}
-
 void mvwprintz(WINDOW *w, int y, int x, nc_color FG, const char *mes, ...)
 {
     va_list ap;
@@ -449,17 +453,6 @@ void mvwprintz(WINDOW *w, int y, int x, nc_color FG, const char *mes, ...)
     wattron(w, FG);
     mvwprintw(w, y, x, "%s", text.c_str());
     wattroff(w, FG);
-}
-
-void printz(nc_color FG, const char *mes, ...)
-{
-    va_list ap;
-    va_start(ap, mes);
-    const std::string text = vstring_format(mes, ap);
-    va_end(ap);
-    attron(FG);
-    printw("%s", text.c_str());
-    attroff(FG);
 }
 
 void wprintz(WINDOW *w, nc_color FG, const char *mes, ...)
@@ -520,12 +513,15 @@ void draw_custom_border(WINDOW *w, chtype ls, chtype rs, chtype ts, chtype bs, c
     wattroff(w, FG);
 }
 
-void draw_border(WINDOW *w, nc_color FG)
+void draw_border( WINDOW *w, nc_color border_color, std::string title, nc_color title_color )
 {
-    wattron(w, FG);
-    wborder(w, LINE_XOXO, LINE_XOXO, LINE_OXOX, LINE_OXOX,
-            LINE_OXXO, LINE_OOXX, LINE_XXOO, LINE_XOOX );
-    wattroff(w, FG);
+    wattron( w, border_color );
+    wborder( w, LINE_XOXO, LINE_XOXO, LINE_OXOX, LINE_OXOX,
+             LINE_OXXO, LINE_OOXX, LINE_XXOO, LINE_XOOX );
+    wattroff( w, border_color );
+    if( !title.empty() ) {
+        center_print( w, 0, title_color, title.c_str() );
+    }
 }
 
 void draw_tabs(WINDOW *w, int active_tab, ...)
@@ -597,15 +593,21 @@ void draw_tabs(WINDOW *w, int active_tab, ...)
     }
 }
 
-// yn to make an immediate selection
-// esc to cancel, returns false
-// enter or space to accept, any other key to toggle
 bool query_yn(const char *mes, ...)
 {
     va_list ap;
     va_start(ap, mes);
-    const std::string text = vstring_format(mes, ap);
+    bool ret = internal_query_yn( mes, ap );
     va_end(ap);
+    return ret;
+}
+
+// yn to make an immediate selection
+// esc to cancel, returns false
+// enter or space to accept, any other key to toggle
+bool internal_query_yn(const char *mes, va_list ap )
+{
+    const std::string text = vstring_format(mes, ap);
 
     bool const force_uc = !!OPTIONS["FORCE_CAPITAL_YN"];
 
@@ -907,7 +909,7 @@ std::string string_input_win(WINDOW *w, std::string input, int max_length, int s
                         hist.clear();
                     }
             }
-        } else if (ch == KEY_DOWN || ch == KEY_NPAGE || ch == KEY_PPAGE ) {
+        } else if (ch == KEY_DOWN || ch == KEY_NPAGE || ch == KEY_PPAGE || ch == KEY_BTAB || ch == 9 ) {
             /* absolutely nothing */
         } else if (ch == KEY_RIGHT ) {
             if( pos + 1 <= (int)ret.size() ) {
@@ -1029,7 +1031,7 @@ long popup(const std::string &text, PopupFlags flags)
     std::vector<std::string> folded = foldstring(text, FULL_SCREEN_WIDTH - 2);
     height += folded.size();
     for( auto &elem : folded ) {
-        int cw = utf8_width( elem );
+        int cw = utf8_width( elem, true );
         if(cw > width) {
             width = cw;
         }
@@ -1127,13 +1129,19 @@ int draw_item_info(const int iLeft, const int iWidth, const int iTop, const int 
 
 std::string string_replace( std::string text, const std::string &before, const std::string &after )
 {
-    while( true ) {
-        size_t pos = text.find( before );
-        if( pos != std::string::npos ) {
-            text.replace( pos, before.length(), after );
-        } else {
-            break;
-        }
+    // Check if there's something to replace (mandatory) and it's necessary (optional)
+    // Second condition assumes that text is much longer than both &before and &after.
+    if ( before.length() == 0 || !before.compare( after ) ) {
+        return text;
+    }
+
+    const size_t before_len = before.length();
+    const size_t after_len = after.length();
+    size_t pos = 0;
+
+    while( ( pos = text.find( before, pos ) ) != std::string::npos ) {
+        text.replace( pos, before_len, after );
+        pos += after_len;
     }
 
     return text;
@@ -1258,7 +1266,6 @@ int draw_item_info(WINDOW *win, const std::string sItemName, const std::string s
     }
     buffer << " \n"; //This space is required, otherwise it won't make an empty line.
 
-    int selected_ret = '\n';
     buffer << format_item_info( vItemDisplay, vItemCompare );
 
     const auto b = use_full_win ? 0 : (without_border ? 1 : 2);
@@ -1302,8 +1309,8 @@ int draw_item_info(WINDOW *win, const std::string sItemName, const std::string s
         } else if( handle_scrolling && ch == KEY_NPAGE ) {
             selected++;
             werase(win);
-        } else if( selected > 0 && ( ch == '\n' || ch == KEY_RIGHT ) && selected_ret != 0 ) {
-            ch = selected_ret;
+        } else if( selected > 0 && ( ch == '\n' || ch == KEY_RIGHT ) ) {
+            ch = '\n';
             break;
         } else if( selected == KEY_LEFT ) {
             ch = (int)' ';
@@ -1367,6 +1374,12 @@ long special_symbol (long sym)
     }
 }
 
+std::string trim( const std::string &s )
+{
+   auto wsfront = std::find_if_not( s.begin(), s.end(), []( int c ) { return std::isspace( c ); });
+   return std::string( wsfront, std::find_if_not( s.rbegin(), std::string::const_reverse_iterator( wsfront ), []( int c ){ return std::isspace( c ); }).base());
+}
+
 // find the position of each non-printing tag in a string
 std::vector<size_t> get_tag_positions(const std::string &s)
 {
@@ -1401,7 +1414,7 @@ std::string word_rewrap (const std::string &in, int width)
     for (int j = 0, x = 0; j < (int)in.size(); ) {
         const char *ins = instr + j;
         int len = ANY_LENGTH;
-        unsigned uc = UTF8_getch(&ins, &len);
+        uint32_t uc = UTF8_getch(&ins, &len);
 
         if (uc == '<') { // maybe skip non-printing tag
             std::vector<size_t>::iterator it;
@@ -1844,52 +1857,35 @@ std::string rm_prefix(std::string str, char c1, char c2)
 // draw a menu-item-like string with highlighted shortcut character
 // Example: <w>ield, m<o>ve
 // returns: output length (in console cells)
-size_t shortcut_print(WINDOW *w, int y, int x, nc_color color, nc_color colork,
-                      const std::string &fmt)
+size_t shortcut_print( WINDOW *w, int y, int x, nc_color text_color,
+                       nc_color shortcut_color, const std::string &fmt )
 {
-    size_t pos = fmt.find_first_of('<');
-    size_t pos2 = fmt.find_first_of('>');
-    size_t sep = std::min(fmt.find_first_of('|', pos), pos2);
-    size_t len = 0;
-    if(pos2 != std::string::npos && pos < pos2) {
-        std::string prestring = fmt.substr(0, pos);
-        std::string poststring = fmt.substr(pos2 + 1, std::string::npos);
-        std::string shortcut = fmt.substr(pos + 1, sep - pos - 1);
-        mvwprintz(w, y, x, color, "%s", prestring.c_str());
-        len = utf8_width( prestring );
-        mvwprintz(w, y, x + len, colork, "%s", shortcut.c_str());
-        len += utf8_width( shortcut );
-        mvwprintz(w, y, x + len, color, "%s", poststring.c_str());
-        len += utf8_width( poststring );
-    } else {
-        // no shortcut?
-        mvwprintz(w, y, x, color, "%s", fmt.c_str());
-        len = utf8_width( fmt );
-    }
-    return len;
+    wmove( w, y, x);
+    return shortcut_print( w, text_color, shortcut_color, fmt );
 }
 
 //same as above, from current position
-size_t shortcut_print(WINDOW *w, nc_color color, nc_color colork, const std::string &fmt)
+size_t shortcut_print( WINDOW *w, nc_color text_color, nc_color shortcut_color,
+                       const std::string &fmt )
 {
-    size_t pos = fmt.find_first_of('<');
-    size_t pos2 = fmt.find_first_of('>');
-    size_t sep = std::min(fmt.find_first_of('|', pos), pos2);
+    size_t pos = fmt.find_first_of( '<' );
+    size_t pos_end = fmt.find_first_of( '>' );
+    size_t sep = std::min( fmt.find_first_of( '|', pos ), pos_end );
     size_t len = 0;
-    if(pos2 != std::string::npos && pos < pos2) {
-        std::string prestring = fmt.substr(0, pos);
-        std::string poststring = fmt.substr(pos2 + 1, std::string::npos);
-        std::string shortcut = fmt.substr(pos + 1, sep - pos - 1);
-        wprintz(w, color, "%s", prestring.c_str());
-        wprintz(w, colork, "%s", shortcut.c_str());
-        wprintz(w, color, "%s", poststring.c_str());
-        len = utf8_width(prestring.c_str());
-        len += utf8_width(shortcut.c_str());
-        len += utf8_width(poststring.c_str());
+    if( pos_end != std::string::npos && pos < pos_end ) {
+        std::string prestring = fmt.substr( 0, pos );
+        std::string poststring = fmt.substr( pos_end + 1, std::string::npos );
+        std::string shortcut = fmt.substr( pos + 1, sep - pos - 1 );
+        wprintz( w, text_color, "%s", prestring.c_str() );
+        wprintz( w, shortcut_color, "%s", shortcut.c_str() );
+        wprintz( w, text_color, "%s", poststring.c_str() );
+        len = utf8_width( prestring.c_str() );
+        len += utf8_width( shortcut.c_str() );
+        len += utf8_width( poststring.c_str() );
     } else {
         // no shortcut?
-        wprintz(w, color, "%s", fmt.c_str());
-        len = utf8_width(fmt.c_str());
+        wprintz( w, text_color, "%s", fmt.c_str() );
+        len = utf8_width( fmt.c_str() );
     }
     return len;
 }
@@ -1954,7 +1950,7 @@ std::pair<std::string, nc_color> const& get_light_level(const float light)
     using pair_t = std::pair<std::string, nc_color>;
     static std::array<pair_t, 6> const strings {{
         pair_t {_("unknown"), c_pink},
-        pair_t {_("brightly"), c_yellow},
+        pair_t {_("bright"), c_yellow},
         pair_t {_("cloudy"), c_white},
         pair_t {_("shady"), c_ltgray},
         pair_t {_("dark"), c_dkgray},
@@ -1969,6 +1965,46 @@ std::pair<std::string, nc_color> const& get_light_level(const float light)
     }
 
     return strings[light_level];
+}
+
+template<typename RatingIterator>
+std::string get_labeled_bar( const double val, const int width, const std::string &label,
+    RatingIterator begin, RatingIterator end )
+{
+    std::string result;
+
+    result.reserve( width );
+    if( !label.empty() ) {
+        result += label;
+        result += ' ';
+    }
+    const int bar_width = width - utf8_width( result ) - 2; // - 2 for the brackets
+
+    result += '[';
+    if( bar_width > 0 ) {
+        int used_width = 0;
+        for( RatingIterator it(begin); it != end; ++it ) {
+            const double factor = std::min( 1.0, std::max( 0.0, it->first * val ) );
+            const int seg_width = int( factor * bar_width ) - used_width;
+
+            if( seg_width <= 0 ) {
+                continue;
+            }
+            used_width += seg_width;
+            result.insert( result.end(), seg_width, it->second );
+        }
+        result.insert( result.end(), bar_width - used_width, ' ' );
+    }
+    result += ']';
+
+    return result;
+}
+
+std::string get_labeled_bar( const double val, const int width, const std::string &label, char c )
+{
+    const std::array<std::pair<double, char>, 1> ratings =
+        {{ std::make_pair(1.0, c) }};
+    return get_labeled_bar( val, width, label, ratings.begin(), ratings.end() );
 }
 
 /**
@@ -2022,8 +2058,23 @@ scrollingcombattext::cSCT::cSCT(const int p_iPosX, const int p_iPosY, const dire
 {
     iPosX = p_iPosX;
     iPosY = p_iPosY;
-
+    sType = p_sType;
     oDir = p_oDir;
+
+    // translate from player relative to screen relative direction
+    iso_mode = false;
+#ifdef TILES
+    iso_mode = tile_iso && use_tiles;
+#endif
+    oUp = iso_mode ? NORTHEAST : NORTH;
+    oUpRight = iso_mode ? EAST : NORTHEAST;
+    oRight = iso_mode ? SOUTHEAST : EAST;
+    oDownRight = iso_mode ? SOUTH : SOUTHEAST;
+    oDown = iso_mode ? SOUTHWEST : SOUTH;
+    oDownLeft = iso_mode ? WEST : SOUTHWEST;
+    oLeft = iso_mode ? NORTHWEST : WEST;
+    oUpLeft = iso_mode ? NORTH : NORTHWEST;
+
     point pairDirXY = direction_XY(oDir);
 
     iDirX = pairDirXY.x;
@@ -2044,7 +2095,6 @@ scrollingcombattext::cSCT::cSCT(const int p_iPosX, const int p_iPosY, const dire
     sText2 = p_sText2;
     gmt2 = p_gmt2;
 
-    sType = p_sType;
 }
 
 void scrollingcombattext::add(const int p_iPosX, const int p_iPosY, direction p_oDir,
@@ -2053,44 +2103,67 @@ void scrollingcombattext::add(const int p_iPosX, const int p_iPosY, direction p_
                               const std::string p_sType)
 {
     if (OPTIONS["ANIMATION_SCT"]) {
+
         int iCurStep = 0;
+
+        bool tiled = false;
+        bool iso_mode = false;
+#ifdef TILES
+        tiled = use_tiles;
+        iso_mode = tile_iso && use_tiles;
+#endif
 
         if (p_sType == "hp") {
             //Remove old HP bar
             removeCreatureHP();
 
-            if (p_oDir == WEST || p_oDir == NORTHWEST || p_oDir == SOUTHWEST) {
-                p_oDir = WEST;
+            if (p_oDir == WEST || p_oDir == NORTHWEST || p_oDir == (iso_mode ? NORTH : SOUTHWEST) ) {
+                p_oDir = (iso_mode ? NORTHWEST : WEST);
             } else {
-                p_oDir = EAST;
+                p_oDir = (iso_mode ? SOUTHEAST : EAST);
             }
 
         } else {
-            //reserve East/West for creature hp display
-            if (p_oDir == EAST) {
-                p_oDir = (one_in(2)) ? NORTHEAST : SOUTHEAST;
+            //reserve Left/Right for creature hp display
+            if (p_oDir == (iso_mode ? SOUTHEAST : EAST)) {
+                p_oDir = (one_in(2)) ? (iso_mode ? EAST : NORTHEAST) : (iso_mode ? SOUTH : SOUTHEAST);
 
-            } else if (p_oDir == WEST) {
-                p_oDir = (one_in(2)) ? NORTHWEST : SOUTHWEST;
+            } else if (p_oDir == (iso_mode ? NORTHWEST : WEST)) {
+                p_oDir = (one_in(2)) ? (iso_mode ? NORTH : NORTHWEST) : (iso_mode ? WEST : SOUTHWEST);
             }
         }
 
-        //Message offset: multiple impacts in the same direction in short order overriding prior messages (mostly turrets)
-        for (std::vector<cSCT>::reverse_iterator iter = vSCT.rbegin(); iter != vSCT.rend(); ++iter) {
-            if (iter->getDirecton() == p_oDir && (iter->getStep() + iter->getStepOffset()) == iCurStep) {
-                ++iCurStep;
-                iter->advanceStepOffset();
+        // in tiles, SCT that scroll downwards are inserted at the beginning of the vector to prevent
+        // oversize ascii tiles overdrawing messages below them.
+        if (tiled && ( p_oDir == SOUTHWEST || p_oDir == SOUTH || p_oDir == (iso_mode ? WEST : SOUTHEAST))) {
+
+            //Message offset: multiple impacts in the same direction in short order overriding prior messages (mostly turrets)
+            for (std::vector<cSCT>::iterator iter = vSCT.begin(); iter != vSCT.end(); ++iter) {
+                if (iter->getDirecton() == p_oDir && (iter->getStep() + iter->getStepOffset()) == iCurStep) {
+                    ++iCurStep;
+                    iter->advanceStepOffset();
+                }
             }
+            vSCT.insert( vSCT.begin(), cSCT(p_iPosX, p_iPosY, p_oDir, p_sText, p_gmt, p_sText2, p_gmt2, p_sType));
+
+        } else {
+            //Message offset: this time in reverse.
+            for (std::vector<cSCT>::reverse_iterator iter = vSCT.rbegin(); iter != vSCT.rend(); ++iter) {
+                if (iter->getDirecton() == p_oDir && (iter->getStep() + iter->getStepOffset()) == iCurStep) {
+                    ++iCurStep;
+                    iter->advanceStepOffset();
+                }
+            }
+            vSCT.push_back(cSCT(p_iPosX, p_iPosY, p_oDir, p_sText, p_gmt, p_sText2, p_gmt2, p_sType));
         }
 
-        vSCT.push_back(cSCT(p_iPosX, p_iPosY, p_oDir, p_sText, p_gmt, p_sText2, p_gmt2, p_sType));
     }
 }
 
 std::string scrollingcombattext::cSCT::getText(std::string const &type) const
 {
     if (!sText2.empty()) {
-        if (oDir == NORTHWEST || oDir == SOUTHWEST || oDir == WEST) {
+        if (oDir == oUpLeft || oDir == oDownLeft || oDir == oLeft) {
             if (type == "first") {
                 return sText2 + " ";
 
@@ -2114,7 +2187,7 @@ std::string scrollingcombattext::cSCT::getText(std::string const &type) const
 game_message_type scrollingcombattext::cSCT::getMsgType(std::string const &type) const
 {
     if (!sText2.empty()) {
-        if (oDir == NORTHWEST || oDir == SOUTHWEST || oDir == WEST) {
+        if (oDir == oUpLeft || oDir == oDownLeft || oDir == oLeft) {
             if (type == "first") {
                 return gmt2;
             }
@@ -2131,19 +2204,24 @@ game_message_type scrollingcombattext::cSCT::getMsgType(std::string const &type)
 int scrollingcombattext::cSCT::getPosX() const
 {
     if (getStep() > 0) {
-        int iDirOffset = (oDir == EAST) ? 1 : ((oDir == WEST) ? -1 : 0);
+        int iDirOffset = (oDir == oRight) ? 1 : ((oDir == oLeft) ? -1 : 0);
 
-        if (oDir == NORTH || oDir == SOUTH) {
+        if (oDir == oUp || oDir == oDown) {
+
+            if (iso_mode) {
+                iDirOffset = (oDir == oUp) ? 1 : -1;
+            }
+
             //Center text
-            iDirOffset -= getText().length() / 2;
+            iDirOffset -= ( getText().length() / 2 );
 
-        } else if (oDir == NORTHWEST || oDir == SOUTHWEST || oDir == WEST) {
-            //Left align text
-            iDirOffset -= getText().length();
+        } else if (oDir == oLeft || oDir == oDownLeft || oDir == oUpLeft) {
+            //Right align text
+            iDirOffset -= getText().length() - 1;
         }
 
         return iPosX + iDirOffset + (iDirX * ((sType == "hp") ? (getStepOffset() + 1) :
-                                              (getStepOffset() + getStep())));
+                                              (getStepOffset() * (iso_mode ? 2 : 1) + getStep())));
     }
 
     return 0;
@@ -2152,8 +2230,26 @@ int scrollingcombattext::cSCT::getPosX() const
 int scrollingcombattext::cSCT::getPosY() const
 {
     if (getStep() > 0) {
-        const int iDirOffset = (oDir == SOUTH) ? 1 : ((oDir == NORTH) ? -1 : 0);
-        return iPosY + iDirOffset + (iDirY * (getStepOffset() + getStep()));
+        int iDirOffset = (oDir == oDown) ? 1 : ((oDir == oUp) ? -1 : 0);
+
+        if (iso_mode) {
+            if (oDir == oLeft || oDir == oRight) {
+                iDirOffset = (oDir == oRight) ? 1 : -1;
+            }
+
+            if (oDir == oUp || oDir == oDown) {
+            //Center text
+            iDirOffset -= ( getText().length() / 2 );
+
+            } else if (oDir == oLeft || oDir == oDownLeft || oDir == oUpLeft) {
+                //Right align text
+                iDirOffset -= getText().length() - 1;
+            }
+
+        }
+
+        return iPosY + iDirOffset + (iDirY * ((iso_mode && sType == "hp") ? (getStepOffset() + 1) :
+                                              (getStepOffset() * (iso_mode ? 2 : 1) + getStep())));
     }
 
     return 0;

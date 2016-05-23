@@ -2,9 +2,10 @@
 #define WORLDFACTORY_H
 
 #include "options.h"
-#include "output.h"
+#include "cursesdef.h"
 #include "enums.h"
 
+#include <functional>
 #include <map>
 #include <unordered_map>
 #include <vector>
@@ -23,6 +24,9 @@ struct WORLD {
     std::vector<std::string> active_mod_order;
 
     WORLD();
+
+    bool save_exists( const std::string &name ) const;
+    void add_save( const std::string &name );
 };
 
 class mod_manager;
@@ -83,7 +87,7 @@ class worldfactory
         std::unique_ptr<mod_manager> mman;
         std::unique_ptr<mod_ui> mman_ui;
 
-        typedef int ( worldfactory::*worldgen_display )( WINDOW *, WORLDPTR );
+        typedef std::function<int( WINDOW *, WORLDPTR )> worldgen_display;
 
         std::vector<worldgen_display> tabs;
         std::vector<std::string> tab_strings;

@@ -8,6 +8,7 @@
 #include "cursesdef.h"
 #include "debug.h"
 #include "player.h"
+#include "translations.h"
 #include <cstring>
 #include <vector>
 #include <fstream>
@@ -321,11 +322,17 @@ bool WinCreate()
         window_flags |= SDL_WINDOW_FULLSCREEN;
     } else if (OPTIONS["FULLSCREEN"] == "windowedbl") {
         window_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+        SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+    }
+
+    int display = OPTIONS["DISPLAY"];
+    if ( display < 0 || display >= SDL_GetNumVideoDisplays() ) {
+        display = 0;
     }
 
     window = SDL_CreateWindow(version.c_str(),
-            SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED,
+            SDL_WINDOWPOS_CENTERED_DISPLAY( display ),
+            SDL_WINDOWPOS_CENTERED_DISPLAY( display ),
             WindowWidth,
             WindowHeight,
             window_flags
@@ -452,6 +459,8 @@ void WinDestroy()
     cleanup_sound();
     Mix_CloseAudio();
 #endif
+    clear_texture_pool();
+
     if(joystick) {
         SDL_JoystickClose(joystick);
         joystick = 0;
@@ -647,6 +656,31 @@ void try_sdl_update()
     }
 }
 
+//for resetting the render target after updating texture caches in cata_tiles.cpp
+void set_displaybuffer_rendertarget()
+{
+    if( SDL_SetRenderTarget( renderer, display_buffer ) != 0 ) {
+        dbg(D_ERROR) << "SDL_SetRenderTarget failed: " << SDL_GetError();
+    }
+}
+
+// Populate a map with the available video displays and their name
+void find_videodisplays() {
+    std::map<int, std::string> displays;
+
+    int numdisplays = SDL_GetNumVideoDisplays();
+    for( int i = 0 ; i < numdisplays ; i++ ) {
+        displays.insert( { i, SDL_GetDisplayName( i ) } );
+    }
+
+    int current_display = OPTIONS["DISPLAY"];
+
+    OPTIONS["DISPLAY"] = options_manager::cOpt("graphics", _("Display"),
+                              _("Sets which video display will be used to show the game. Requires restart."),
+                              displays, current_display, 0, options_manager::COPT_CURSES_HIDE
+                              );
+}
+
 // line_id is one of the LINE_*_C constants
 // FG is a curses color
 void Font::draw_ascii_lines(unsigned char line_id, int drawx, int drawy, int FG) const
@@ -706,6 +740,28 @@ void invalidate_framebuffer(int x, int y, int width, int height)
     }
 }
 
+void invalidate_map_framebuffer()
+{
+    if( !g->w_terrain ) {
+        return;
+    }
+    for( int j = 0, fby = g->w_terrain->y; j < TERRAIN_WINDOW_HEIGHT; j++, fby++ ) {
+        std::fill_n( framebuffer[fby].chars.begin() + g->w_terrain->x, TERRAIN_WINDOW_WIDTH,
+                     cursecell( "" ) );
+    }
+}
+
+void invalidate_overmap_framebuffer()
+{
+    if( !g->w_overmap ) {
+        return;
+    }
+    for( int j = 0, fby = g->w_overmap->y; j < OVERMAP_WINDOW_HEIGHT; j++, fby++ ) {
+        std::fill_n( framebuffer[fby].chars.begin() + g->w_overmap->x, OVERMAP_WINDOW_WIDTH,
+                     cursecell( "" ) );
+    }
+}
+
 void reinitialize_framebuffer()
 {
     //Re-initialize the framebuffer with new values.
@@ -715,6 +771,12 @@ void reinitialize_framebuffer()
     for( int i = 0; i < new_height; i++ ) {
         framebuffer[i].chars.assign( new_width, cursecell("") );
     }
+}
+
+void clear_window_area(WINDOW* win)
+{
+    FillRectDIB(win->x * fontwidth, win->y * fontheight,
+                win->width * fontwidth, win->height * fontheight, COLOR_BLACK);
 }
 
 extern WINDOW *w_hit_animation;
@@ -743,11 +805,16 @@ void curses_drawwindow(WINDOW *win)
         int partial_width = std::max(TERRAIN_WINDOW_TERM_WIDTH * fontwidth - TERRAIN_WINDOW_WIDTH * map_font->fontwidth, 0);
         int partial_height = std::max(TERRAIN_WINDOW_TERM_HEIGHT * fontheight - TERRAIN_WINDOW_HEIGHT * map_font->fontheight, 0);
         //Gap between terrain and lower window edge
-        FillRectDIB(win->x * map_font->fontwidth, (win->y + TERRAIN_WINDOW_HEIGHT) * map_font->fontheight,
-                    TERRAIN_WINDOW_WIDTH * map_font->fontwidth + partial_width, partial_height, COLOR_BLACK);
+        if( partial_height > 0 ) {
+            FillRectDIB( win->x * map_font->fontwidth,
+                         ( win->y + TERRAIN_WINDOW_HEIGHT ) * map_font->fontheight,
+                         TERRAIN_WINDOW_WIDTH * map_font->fontwidth + partial_width, partial_height, COLOR_BLACK );
+        }
         //Gap between terrain and sidebar
-        FillRectDIB((win->x + TERRAIN_WINDOW_WIDTH) * map_font->fontwidth, win->y * map_font->fontheight,
-                    partial_width, TERRAIN_WINDOW_HEIGHT * map_font->fontheight + partial_height, COLOR_BLACK);
+        if( partial_width > 0 ) {
+            FillRectDIB( ( win->x + TERRAIN_WINDOW_WIDTH ) * map_font->fontwidth, win->y * map_font->fontheight,
+                         partial_width, TERRAIN_WINDOW_HEIGHT * map_font->fontheight + partial_height, COLOR_BLACK );
+        }
         // Special font for the terrain window
         update = map_font->draw_window(win);
     } else if (g && win == g->w_overmap && overmap_font != NULL) {
@@ -769,10 +836,9 @@ void curses_drawwindow(WINDOW *win)
         int wheight = win->height * font->fontheight;
         FillRectDIB(offsetx, offsety, wwidth, wheight, COLOR_BLACK);
         update = true;
-    } else if (g && win == g->w_pixel_minimap && OPTIONS["PIXEL_MINIMAP"]) {
+    } else if (g && win == g->w_pixel_minimap && g->pixel_minimap_option) {
         // Make sure the entire minimap window is black before drawing.
-        FillRectDIB(win->x * fontwidth, win->y * fontheight,
-                    win->width * fontwidth, win->height * fontheight, COLOR_BLACK);
+        clear_window_area(win);
         tilecontext->draw_minimap(
             win->x * fontwidth, win->y * fontheight,
             tripoint( g->u.pos().x, g->u.pos().y, g->ter_view_z ),
@@ -804,6 +870,39 @@ bool Font::draw_window( WINDOW *win, int offsetx, int offsety )
             fontScaleBuffer = tilecontext->get_tile_width();
     }
     const int fontScale = tilecontext->get_tile_width();
+    //This creates a problem when map_font is different from the regular font
+    //Specifically when showing the overmap
+    //And in some instances of screen change, i.e. inventory.
+    bool oldWinCompatible = false;
+    /*
+    Let's try to keep track of different windows.
+    A number of windows are coexisting on the screen, so don't have to interfere.
+
+    g->w_terrain, g->w_minimap, g->w_HP, g->w_status, g->w_status2, g->w_messages,
+     g->w_location, and g->w_minimap, can be buffered if either of them was
+     the previous window.
+
+    g->w_overmap and g->w_omlegend are likewise.
+
+    Everything else works on strict equality because there aren't yet IDs for some of them.
+    */
+    if( g && ( win == g->w_terrain || win == g->w_minimap || win == g->w_HP || win == g->w_status ||
+         win == g->w_status2 || win == g->w_messages || win == g->w_location ) ) {
+        if ( winBuffer == g->w_terrain || winBuffer == g->w_minimap ||
+             winBuffer == g->w_HP || winBuffer == g->w_status || winBuffer == g->w_status2 ||
+             winBuffer == g->w_messages || winBuffer == g->w_location ) {
+            oldWinCompatible = true;
+        }
+    }else if( g && ( win == g->w_overmap || win == g->w_omlegend ) ) {
+        if ( winBuffer == g->w_overmap || winBuffer == g->w_omlegend ) {
+            oldWinCompatible = true;
+        }
+    }else {
+        if( win == winBuffer ) {
+            oldWinCompatible = true;
+        }
+    }
+
     bool update = false;
     for( int j = 0; j < win->height; j++ ) {
         if( !win->line[j].touched ) {
@@ -826,40 +925,7 @@ bool Font::draw_window( WINDOW *win, int offsetx, int offsety )
             const int fbx = win->x + i;
             const int fby = win->y + j;
             cursecell &oldcell = framebuffer[fby].chars[fbx];
-            //This creates a problem when map_font is different from the regular font
-            //Specifically when showing the overmap
-            //And in some instances of screen change, i.e. inventory.
-            bool oldWinCompatible = false;
-            /*
-            Let's try to keep track of different windows.
-            A number of windows are coexisting on the screen, so don't have to interfere.
-
-            g->w_terrain, g->w_minimap, g->w_HP, g->w_status, g->w_status2, g->w_messages,
-             g->w_location, and g->w_minimap, can be buffered if either of them was
-             the previous window.
-
-            g->w_overmap and g->w_omlegend are likewise.
-
-            Everything else works on strict equality because there aren't yet IDs for some of them.
-            */
-            if( g && ( win == g->w_terrain || win == g->w_minimap || win == g->w_HP || win == g->w_status ||
-                 win == g->w_status2 || win == g->w_messages || win == g->w_location ) ) {
-                if ( winBuffer == g->w_terrain || winBuffer == g->w_minimap ||
-                     winBuffer == g->w_HP || winBuffer == g->w_status || winBuffer == g->w_status2 ||
-                     winBuffer == g->w_messages || winBuffer == g->w_location ) {
-                    oldWinCompatible = true;
-                }
-            }else if( g && ( win == g->w_overmap || win == g->w_omlegend ) ) {
-                if ( winBuffer == g->w_overmap || winBuffer == g->w_omlegend ) {
-                    oldWinCompatible = true;
-                }
-            }else {
-                if( win == winBuffer ) {
-                    oldWinCompatible = true;
-                }
-            }
-
-            if (cell == oldcell && oldWinCompatible && fontScale == fontScaleBuffer) {
+            if (oldWinCompatible && cell == oldcell && fontScale == fontScaleBuffer) {
                 continue;
             }
             oldcell = cell;
@@ -1495,6 +1561,8 @@ WINDOW *curses_init(void)
         return NULL;
     }
 
+    find_videodisplays();
+
     TERMINAL_WIDTH = OPTIONS["TERMINAL_X"];
     TERMINAL_HEIGHT = OPTIONS["TERMINAL_Y"];
 
@@ -1762,14 +1830,13 @@ bool input_context::get_coordinates(WINDOW* capture_win, int& x, int& y) {
         return false;
     }
 
-    if (tile_iso) {
-        const int selected_column = (coordinate_x - win_left)/fw - (coordinate_y - win_top - fh - (capture_win->height * fh)/2)/(fw/2);
-        const int selected_row = (coordinate_x - win_left)/fw + (coordinate_y - win_top - fh - (capture_win->height * fh)/2)/(fw/2);
-        // add_msg( m_info, "c %d r %d", selected_column, selected_row );
-        x = g->ter_view_x - ((capture_win->width / 2) - selected_column);
-        y = g->ter_view_y - ((capture_win->height / 2) - selected_row);
-        // add_msg( m_info, "gtvx %d gtvy %d x %d y %d", g->ter_view_x, g->ter_view_y, x, y );
-
+    if ( tile_iso && use_tiles ) {
+        const int screen_column = round( (float) ( coordinate_x - win_left - (( win_right - win_left ) / 2 + win_left ) ) / ( fw / 2 ) );
+        const int screen_row = round( (float) ( coordinate_y - win_top - ( win_bottom - win_top ) / 2 + win_top ) / ( fw / 4 ) );
+        const int selected_x = ( screen_column - screen_row ) / 2;
+        const int selected_y = ( screen_row + screen_column ) / 2;
+        x = g->ter_view_x + selected_x;
+        y = g->ter_view_y + selected_y;
     } else {
         const int selected_column = (coordinate_x - win_left) / fw;
         const int selected_row = (coordinate_y - win_top) / fh;

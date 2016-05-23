@@ -20,6 +20,7 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/main_menu.cpp
     ${CMAKE_SOURCE_DIR}/src/savegame_legacy.cpp
     ${CMAKE_SOURCE_DIR}/src/mutation_data.cpp
+    ${CMAKE_SOURCE_DIR}/src/mutation_ui.cpp
     ${CMAKE_SOURCE_DIR}/src/posix_time.cpp
     ${CMAKE_SOURCE_DIR}/src/tutorial.cpp
     ${CMAKE_SOURCE_DIR}/src/catacharset.cpp
@@ -48,7 +49,6 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/catalua.cpp
     ${CMAKE_SOURCE_DIR}/src/map.cpp
     ${CMAKE_SOURCE_DIR}/src/action.cpp
-    ${CMAKE_SOURCE_DIR}/src/nonplayer.cpp
     ${CMAKE_SOURCE_DIR}/src/start_location.cpp
     ${CMAKE_SOURCE_DIR}/src/mutation.cpp
     ${CMAKE_SOURCE_DIR}/src/mapgen.cpp
@@ -71,6 +71,7 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/dependency_tree.cpp
     ${CMAKE_SOURCE_DIR}/src/monster.cpp
     ${CMAKE_SOURCE_DIR}/src/editmap.cpp
+    ${CMAKE_SOURCE_DIR}/src/explosion.cpp
     ${CMAKE_SOURCE_DIR}/src/mapsharing.cpp
     ${CMAKE_SOURCE_DIR}/src/requirements.cpp
     ${CMAKE_SOURCE_DIR}/src/cursesport.cpp
@@ -81,6 +82,7 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/speech.cpp
     ${CMAKE_SOURCE_DIR}/src/mod_manager_ui.cpp
     ${CMAKE_SOURCE_DIR}/src/iuse_software_snake.cpp
+    ${CMAKE_SOURCE_DIR}/src/morale.cpp
     ${CMAKE_SOURCE_DIR}/src/savegame.cpp
     ${CMAKE_SOURCE_DIR}/src/lightmap.cpp
     ${CMAKE_SOURCE_DIR}/src/mapdata.cpp
@@ -90,6 +92,9 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/mod_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/vehicle.cpp
     ${CMAKE_SOURCE_DIR}/src/vehicle_group.cpp
+    ${CMAKE_SOURCE_DIR}/src/visitable.cpp
+    ${CMAKE_SOURCE_DIR}/src/map_selector.cpp
+    ${CMAKE_SOURCE_DIR}/src/vehicle_selector.cpp
     ${CMAKE_SOURCE_DIR}/src/mission_place.cpp
     ${CMAKE_SOURCE_DIR}/src/material.cpp
     ${CMAKE_SOURCE_DIR}/src/veh_type.cpp
@@ -108,6 +113,7 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/faction.cpp
     ${CMAKE_SOURCE_DIR}/src/wish.cpp
     ${CMAKE_SOURCE_DIR}/src/bionics.cpp
+    ${CMAKE_SOURCE_DIR}/src/bionics_ui.cpp
     ${CMAKE_SOURCE_DIR}/src/missiondef.cpp
     ${CMAKE_SOURCE_DIR}/src/wincurse.cpp
     ${CMAKE_SOURCE_DIR}/src/worldfactory.cpp
@@ -116,6 +122,7 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/computer.cpp
     ${CMAKE_SOURCE_DIR}/src/trap.cpp
     ${CMAKE_SOURCE_DIR}/src/game.cpp
+    ${CMAKE_SOURCE_DIR}/src/gates.cpp
     ${CMAKE_SOURCE_DIR}/src/monattack.cpp
     ${CMAKE_SOURCE_DIR}/src/effect.cpp
     ${CMAKE_SOURCE_DIR}/src/iuse_software_sokoban.cpp
@@ -123,7 +130,7 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/auto_pickup.cpp
     ${CMAKE_SOURCE_DIR}/src/iuse_actor.cpp
     ${CMAKE_SOURCE_DIR}/src/cata_tiles.cpp
-	${CMAKE_SOURCE_DIR}/src/cata_utility.cpp
+    ${CMAKE_SOURCE_DIR}/src/cata_utility.cpp
     ${CMAKE_SOURCE_DIR}/src/profession.cpp
     ${CMAKE_SOURCE_DIR}/src/init.cpp
     ${CMAKE_SOURCE_DIR}/src/sounds.cpp
@@ -132,12 +139,13 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/clzones.cpp
     ${CMAKE_SOURCE_DIR}/src/character.cpp
     ${CMAKE_SOURCE_DIR}/src/live_view.cpp
-	${CMAKE_SOURCE_DIR}/src/lua_console.cpp
+    ${CMAKE_SOURCE_DIR}/src/lua_console.cpp
     ${CMAKE_SOURCE_DIR}/src/iexamine.cpp
     ${CMAKE_SOURCE_DIR}/src/gamemode.cpp
     ${CMAKE_SOURCE_DIR}/src/creature.cpp
     ${CMAKE_SOURCE_DIR}/src/inventory_ui.cpp
     ${CMAKE_SOURCE_DIR}/src/char_validity_check.cpp
+    ${CMAKE_SOURCE_DIR}/src/coordinate_conversions.cpp
     ${CMAKE_SOURCE_DIR}/src/bodypart.cpp
     ${CMAKE_SOURCE_DIR}/src/line.cpp
     ${CMAKE_SOURCE_DIR}/src/overmap.cpp
@@ -154,6 +162,13 @@ SET(CATACLYSM_DDA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/craft_command.cpp
     ${CMAKE_SOURCE_DIR}/src/crafting_gui.cpp
     ${CMAKE_SOURCE_DIR}/src/iuse_software_minesweeper.cpp
+    ${CMAKE_SOURCE_DIR}/src/drawing_primitives.cpp
+    ${CMAKE_SOURCE_DIR}/src/mattack_actors.cpp
+    ${CMAKE_SOURCE_DIR}/src/consumption.cpp
+    ${CMAKE_SOURCE_DIR}/src/bonuses.cpp
+    ${CMAKE_SOURCE_DIR}/src/vitamin.cpp
+    ${CMAKE_SOURCE_DIR}/src/fault.cpp
+	${CMAKE_SOURCE_DIR}/src/overlay_ordering.cpp
 )
 
 SET (CATACLYSM_DDA_HEADERS
@@ -181,6 +196,7 @@ SET (CATACLYSM_DDA_HEADERS
     ${CMAKE_SOURCE_DIR}/src/item_location.h
     ${CMAKE_SOURCE_DIR}/src/map.h
     ${CMAKE_SOURCE_DIR}/src/npc.h
+    ${CMAKE_SOURCE_DIR}/src/npc_favor.h
     ${CMAKE_SOURCE_DIR}/src/rng.h
     ${CMAKE_SOURCE_DIR}/src/compatibility.h
     ${CMAKE_SOURCE_DIR}/src/faction.h
@@ -192,7 +208,6 @@ SET (CATACLYSM_DDA_HEADERS
     ${CMAKE_SOURCE_DIR}/src/calendar.h
     ${CMAKE_SOURCE_DIR}/src/mod_manager.h
     ${CMAKE_SOURCE_DIR}/src/catacharset.h
-    ${CMAKE_SOURCE_DIR}/src/nonplayer.h
     ${CMAKE_SOURCE_DIR}/src/omdata.h
     ${CMAKE_SOURCE_DIR}/src/game_constants.h
     ${CMAKE_SOURCE_DIR}/src/mission.h
@@ -201,9 +216,13 @@ SET (CATACLYSM_DDA_HEADERS
     ${CMAKE_SOURCE_DIR}/src/worldfactory.h
     ${CMAKE_SOURCE_DIR}/src/editmap.h
     ${CMAKE_SOURCE_DIR}/src/effect.h
+    ${CMAKE_SOURCE_DIR}/src/explosion.h
     ${CMAKE_SOURCE_DIR}/src/creature.h
     ${CMAKE_SOURCE_DIR}/src/vehicle.h
     ${CMAKE_SOURCE_DIR}/src/vehicle_group.h
+    ${CMAKE_SOURCE_DIR}/src/visitable.h
+    ${CMAKE_SOURCE_DIR}/src/map_selector.h
+    ${CMAKE_SOURCE_DIR}/src/vehicle_selector.h
     ${CMAKE_SOURCE_DIR}/src/clzones.h
     ${CMAKE_SOURCE_DIR}/src/translations.h
     ${CMAKE_SOURCE_DIR}/src/skill.h
@@ -213,12 +232,14 @@ SET (CATACLYSM_DDA_HEADERS
     ${CMAKE_SOURCE_DIR}/src/enums.h
     ${CMAKE_SOURCE_DIR}/src/tutorial.h
     ${CMAKE_SOURCE_DIR}/src/simplexnoise.h
+    ${CMAKE_SOURCE_DIR}/src/shadowcasting.h
     ${CMAKE_SOURCE_DIR}/src/scenario.h
     ${CMAKE_SOURCE_DIR}/src/auto_pickup.h
     ${CMAKE_SOURCE_DIR}/src/cata_tiles.h
-	${CMAKE_SOURCE_DIR}/src/cata_utility.h
+    ${CMAKE_SOURCE_DIR}/src/cata_utility.h
     ${CMAKE_SOURCE_DIR}/src/char_validity_check.h
     ${CMAKE_SOURCE_DIR}/src/coordinates.h
+    ${CMAKE_SOURCE_DIR}/src/coordinate_conversions.h
     ${CMAKE_SOURCE_DIR}/src/field.h
     ${CMAKE_SOURCE_DIR}/src/monstergenerator.h
     ${CMAKE_SOURCE_DIR}/src/monfaction.h
@@ -229,7 +250,9 @@ SET (CATACLYSM_DDA_HEADERS
     ${CMAKE_SOURCE_DIR}/src/computer.h
     ${CMAKE_SOURCE_DIR}/src/veh_interact.h
     ${CMAKE_SOURCE_DIR}/src/morale.h
+    ${CMAKE_SOURCE_DIR}/src/morale_types.h
     ${CMAKE_SOURCE_DIR}/src/game.h
+    ${CMAKE_SOURCE_DIR}/src/generic_factory.h
     ${CMAKE_SOURCE_DIR}/src/help.h
     ${CMAKE_SOURCE_DIR}/src/lightmap.h
     ${CMAKE_SOURCE_DIR}/src/mutation.h
@@ -244,7 +267,7 @@ SET (CATACLYSM_DDA_HEADERS
     ${CMAKE_SOURCE_DIR}/src/line.h
     ${CMAKE_SOURCE_DIR}/src/mtype.h
     ${CMAKE_SOURCE_DIR}/src/live_view.h
-	${CMAKE_SOURCE_DIR}/src/lua_console.h
+    ${CMAKE_SOURCE_DIR}/src/lua_console.h
     ${CMAKE_SOURCE_DIR}/src/character.h
     ${CMAKE_SOURCE_DIR}/src/name.h
     ${CMAKE_SOURCE_DIR}/src/tile_id_data.h
@@ -286,6 +309,7 @@ SET (CATACLYSM_DDA_HEADERS
     ${CMAKE_SOURCE_DIR}/src/uistate.h
     ${CMAKE_SOURCE_DIR}/src/profession.h
     ${CMAKE_SOURCE_DIR}/src/path_info.h
+    ${CMAKE_SOURCE_DIR}/src/pathfinding.h
     ${CMAKE_SOURCE_DIR}/src/version.h
     ${CMAKE_SOURCE_DIR}/src/input.h
     ${CMAKE_SOURCE_DIR}/src/item_stack.h
@@ -294,6 +318,19 @@ SET (CATACLYSM_DDA_HEADERS
     ${CMAKE_SOURCE_DIR}/src/craft_command.h
     ${CMAKE_SOURCE_DIR}/src/crafting_gui.h
     ${CMAKE_SOURCE_DIR}/src/iuse_software_minesweeper.h
+    ${CMAKE_SOURCE_DIR}/src/drawing_primitives.h
+    ${CMAKE_SOURCE_DIR}/src/mattack_actors.h
+    ${CMAKE_SOURCE_DIR}/src/bonuses.h
+    ${CMAKE_SOURCE_DIR}/src/vitamin.h
+    ${CMAKE_SOURCE_DIR}/src/fault.h
+	${CMAKE_SOURCE_DIR}/src/overlay_ordering.h
+	${CMAKE_SOURCE_DIR}/src/int_id.h
+	${CMAKE_SOURCE_DIR}/src/io.h
+	${CMAKE_SOURCE_DIR}/src/map_iterator.h
+	${CMAKE_SOURCE_DIR}/src/mingw.thread.h
+	${CMAKE_SOURCE_DIR}/src/overmap_types.h
+	${CMAKE_SOURCE_DIR}/src/string_id.h
+	${CMAKE_SOURCE_DIR}/src/weighted_list.h
 )
 
 # Get GIT version strings

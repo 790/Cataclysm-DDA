@@ -358,6 +358,12 @@
                 { "item": "scrap", "count": [3, 6] },
                 { "item": "pipe", "prob": 50}
             ]
+        },
+        "deconstruct": {
+            "items": [
+                { "item": "metal_tank", "count": 1 },
+                { "item": "pipe", "count": 1 }
+            ]
         }
     },{
         "type" : "furniture",
@@ -1112,13 +1118,69 @@
         }
     },{
         "type" : "furniture",
+        "id" : "f_coffin_c",
+        "name": "coffin",
+        "symbol": "0",
+        "bgcolor": "brown",
+        "move_cost_mod": -1,
+        "required_str": 14,
+        "flags": ["TRANSPARENT", "CONTAINER", "SEALED", "ALLOW_FIELD_EFFECT", "FLAMMABLE", "PLACE_ITEM", 
+                  "ORGANIC", "MOUNTABLE", "SHORT"],
+        "deconstruct": {
+            "items": [
+                { "item": "2x4", "count": 6 },
+                { "item": "nail", "charges": [6, 10] },
+                { "item": "rag", "count": [15, 20] }
+            ]
+        },
+        "max_volume": 4000,
+        "bash": {
+            "str_min": 12, "str_max": 40,
+            "sound": "smash!",
+            "sound_fail": "wham!",
+            "items": [
+                { "item": "2x4", "count": [1, 5] },
+                { "item": "nail", "charges": [2, 10] },
+                { "item": "rag", "count": [ 8, 12] }
+            ]
+        }
+    },{
+        "type" : "furniture",
+        "id" : "f_coffin_o",
+        "name": "open coffin",
+        "symbol": "O",
+        "bgcolor": "brown",
+        "move_cost_mod": -1,
+        "required_str": 12,
+        "flags": ["TRANSPARENT", "CONTAINER", "FLAMMABLE", "PLACE_ITEM", "ORGANIC", "MOUNTABLE",
+          "SHORT"],
+        "deconstruct": {
+            "items": [
+                { "item": "2x4", "count": 6 },
+                { "item": "nail", "charges": [6, 10] },
+                { "item": "rag", "count": [15, 20] }
+            ]
+        },
+        "max_volume": 4000,
+        "bash": {
+            "str_min": 12, "str_max": 40,
+            "sound": "smash!",
+            "sound_fail": "wham!",
+            "items": [
+                { "item": "2x4", "count": [1, 5] },
+                { "item": "nail", "charges": [2, 10] },
+                { "item": "rag", "count": [ 6, 12] }
+            ]
+        }
+    },{
+        "type" : "furniture",
         "id" : "f_crate_c",
         "name": "crate",
         "symbol": "X",
         "bgcolor": "brown",
         "move_cost_mod": -1,
         "required_str": 14,
-        "flags": ["TRANSPARENT", "CONTAINER", "SEALED", "ALLOW_FIELD_EFFECT", "FLAMMABLE", "PLACE_ITEM", 
+        "flags": ["TRANSPARENT", "CONTAINER", "SEALED", "ALLOW_FIELD_EFFECT", "FLAMMABLE", "PLACE_ITEM",
                   "ORGANIC", "MOUNTABLE", "SHORT"],
         "examine_action": "crate",
         "deconstruct": {
@@ -1954,6 +2016,22 @@
         }
      },{
         "type" : "furniture",
+        "id" : "f_egg_sackcs",
+        "name": "spider egg sack",
+        "symbol": "O",
+        "color": "white",
+        "move_cost_mod": 3,
+        "required_str": 6,
+        "flags": ["TRANSPARENT", "FLAMMABLE_ASH", "ORGANIC", "MOUNTABLE", "TINY"],
+        "examine_action": "egg_sackcs",
+        "bash": {
+            "str_min": 8, "str_max": 16,
+            "sound": "splat!",
+            "sound_fail": "whump.",
+            "furn_set": "f_egg_sacke"
+        }
+     },{
+        "type" : "furniture",
         "id" : "f_egg_sackws",
         "name": "spider egg sack",
         "symbol": "O",
@@ -2533,7 +2611,7 @@
             "sound": "smash!",
             "sound_fail": "thump.",
             "items": [
-                { "item": "rock", "count": [1, 6] }              
+                { "item": "rock", "count": [1, 6] }
             ]
         }
       },{

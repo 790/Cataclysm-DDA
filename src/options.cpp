@@ -7,6 +7,7 @@
 #include "cursesdef.h"
 #include "path_info.h"
 #include "mapsharing.h"
+#include "cata_utility.h"
 #include "input.h"
 #include "worldfactory.h"
 #include "catacharset.h"
@@ -26,6 +27,7 @@
 bool trigdist;
 bool use_tiles;
 bool log_from_top;
+int message_ttl;
 bool fov_3d;
 bool tile_iso;
 
@@ -204,6 +206,35 @@ options_manager::cOpt::cOpt(const std::string sPageIn, const std::string sMenuTe
     setSortPos(sPageIn);
 }
 
+//int map constructor
+options_manager::cOpt::cOpt(const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
+           const std::map<int, std::string> mIntValuesIn, int iInitialIn, int iDefaultIn, copt_hide_t opt_hide)
+{
+    sPage = sPageIn;
+    sMenuText = sMenuTextIn;
+    sTooltip = sTooltipIn;
+    sType = "int_map";
+
+    hide = opt_hide;
+
+    mIntValues = mIntValuesIn;
+
+    auto item = mIntValuesIn.find( iInitialIn );
+    if ( item == mIntValuesIn.cend() ) {
+        iInitialIn = mIntValuesIn.cbegin()->first;
+    }
+
+    item = mIntValuesIn.find( iDefaultIn );
+    if ( item == mIntValuesIn.cend() ) {
+        iDefaultIn = mIntValuesIn.cbegin()->first;
+    }
+
+    iDefault = iDefaultIn;
+    iSet = iInitialIn;
+
+    setSortPos(sPageIn);
+}
+
 //float constructor
 options_manager::cOpt::cOpt(const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
            const float fMinIn, float fMaxIn, float fDefaultIn, float fStepIn, copt_hide_t opt_hide)
@@ -318,7 +349,7 @@ std::string options_manager::cOpt::getValue()
     } else if (sType == "bool") {
         return (bSet) ? "true" : "false";
 
-    } else if (sType == "int") {
+    } else if (sType == "int" || sType == "int_map") {
         std::stringstream ssTemp;
         ssTemp << iSet;
         return ssTemp.str();
@@ -342,6 +373,9 @@ std::string options_manager::cOpt::getValueName()
 
     } else if (sType == "bool") {
         return (bSet) ? _("True") : _("False");
+
+    } else if ( sType == "int_map" ) {
+        return string_format(_("%d: %s"), iSet, mIntValues.find( iSet )->second.c_str());
     }
 
     return getValue();
@@ -368,6 +402,9 @@ std::string options_manager::cOpt::getDefaultText(const bool bTranslated)
 
     } else if (sType == "int") {
         return string_format(_("Default: %d - Min: %d, Max: %d"), iDefault, iMin, iMax);
+
+    } else if (sType == "int_map") {
+        return string_format( _( "Default: %d: %s" ), iDefault, mIntValues.find( iDefault )->second.c_str() );
 
     } else if (sType == "float") {
         return string_format(_("Default: %.2f - Min: %.2f, Max: %.2f"), fDefault, fMin, fMax);
@@ -424,6 +461,14 @@ void options_manager::cOpt::setNext()
             iSet = iMin;
         }
 
+    } else if (sType == "int_map") {
+        auto next = std::next( mIntValues.find( iSet ) );
+        if ( next == mIntValues.cend() ) {
+            iSet = mIntValues.cbegin()->first;
+        } else {
+            iSet = next->first;
+        }
+
     } else if (sType == "float") {
         fSet += fStep;
         if (fSet > fMax) {
@@ -453,6 +498,16 @@ void options_manager::cOpt::setPrev()
         iSet--;
         if (iSet < iMin) {
             iSet = iMax;
+        }
+
+    } else if (sType == "int_map") {
+        auto item = mIntValues.find( iSet );
+        if ( item == mIntValues.cbegin() ) {
+            auto prev = std::prev( mIntValues.cend() );
+            iSet = prev->first;
+        } else {
+            auto prev = std::prev( item );
+            iSet = prev->first;
         }
 
     } else if (sType == "float") {
@@ -497,6 +552,14 @@ void options_manager::cOpt::setValue(std::string sSetIn)
             iSet = iDefault;
         }
 
+    } else if (sType == "int_map") {
+        iSet = atoi(sSetIn.c_str());
+
+        auto item = mIntValues.find( iSet );
+        if ( item == mIntValues.cend() ) {
+            iSet = iDefault;
+        }
+
     } else if (sType == "float") {
         std::istringstream ssTemp(sSetIn);
         ssTemp.imbue(std::locale::classic());
@@ -519,7 +582,7 @@ options_manager::cOpt::operator float() const
         return (!sSet.empty()) ? 1.0f : 0.0f;
     } else if (sType == "bool") {
         return (bSet) ? 1.0f : 0.0f;
-    } else if (sType == "int") {
+    } else if (sType == "int" || sType == "int_map") {
         return static_cast<float>(iSet);
     } else if (sType == "float") {
         return fSet;
@@ -536,7 +599,7 @@ options_manager::cOpt::operator int() const
         return (!sSet.empty()) ? 1 : 0;
     } else if (sType == "bool") {
         return (bSet) ? 1 : 0;
-    } else if (sType == "int") {
+    } else if (sType == "int" || sType == "int_map") {
         return iSet;
     } else if (sType == "float") {
         return static_cast<int>(fSet);
@@ -745,6 +808,13 @@ void options_manager::init()
 
     mOptionsSort["general"]++;
 
+    OPTIONS["TURN_DURATION"] = cOpt("general", _("Automatic Zombie Advancement"),
+                                    _("If enabled, zombies will take periodic gameplay turns. This value is the delay between each turn, in seconds. Works best with Safemode disabled. 0 = disabled."),
+                                    0.0, 10.0, 0.0, 0.05
+                                   );
+
+    mOptionsSort["general"]++;
+
     OPTIONS["AUTOSAVE"] = cOpt("general", _("Periodically autosave"),
                                _("If true, game will periodically save the map. Autosaves occur based on in-game turns or real-time minutes, whichever is larger."),
                                false
@@ -944,6 +1014,12 @@ void options_manager::init()
                                        "new_top,new_bottom", "new_bottom"
                                       );
 
+    OPTIONS["MESSAGE_TTL"] = cOpt("interface", _("Sidebar log message display duration"),
+                                        _("Number of turns after which a message will be removed from the sidebar log. '0' disables this option."),
+                                        0, 1000, 0
+                                       );
+
+
     //~ style of vehicle interaction menu; vertical is old one.
     optionNames["vertical"] = _("Vertical");
     optionNames["horizontal"] = _("Horizontal");
@@ -1052,16 +1128,32 @@ void options_manager::init()
                            ); // populate the options dynamically
 
     OPTIONS["PIXEL_MINIMAP"] = cOpt("graphics", _("Pixel Minimap"),
-                                _("If true, a pixel-detail minimap is drawn in the game. Requires restart."),
+                                _("If true, shows the pixel-detail minimap in game after the save is loaded. Use the 'Toggle Pixel Minimap' action key to change its visibility during gameplay."),
                                 true, COPT_CURSES_HIDE
                                );
 
     OPTIONS["PIXEL_MINIMAP_HEIGHT"] = cOpt("graphics", _("Pixel Minimap height"),
-                                _("Height of pixel-detail minimap, measured in terminal rows. Set to 0 for default spacing. Requires restart."),
+                                _("Height of pixel-detail minimap, measured in terminal rows. Set to 0 for default spacing."),
                                 0, 100, 0, COPT_CURSES_HIDE
                                );
 
+    OPTIONS["PIXEL_MINIMAP_RATIO"] = cOpt("graphics", _("Maintain Pixel Minimap aspect ratio"),
+                                          _("Preserves the square shape of tiles shown on the pixel minimap."),
+                                          true, COPT_CURSES_HIDE
+                                          );
+
+    OPTIONS["PIXEL_MINIMAP_BLINK"] = cOpt("graphics", _("Enemy beacon blink speed"),
+                                          _("Controls how fast the enemy beacons blink on the pixel minimap. Value is multiplied by 200 ms. Set to 0 to disable."),
+                                          0, 50, 10, COPT_CURSES_HIDE
+                                          );
+
     mOptionsSort["graphics"]++;
+
+
+    OPTIONS["DISPLAY"] = cOpt("graphics", _("Display"),
+                              _("Sets which video display will be used to show the game. Requires restart."),
+                              0, 10000, 0, COPT_CURSES_HIDE
+                              );
 
     optionNames["fullscreen"] = _("Fullscreen");
     optionNames["windowedbl"] = _("Windowed borderless");
@@ -1094,10 +1186,20 @@ void options_manager::init()
 
     mOptionsSort["debug"]++;
 
-    OPTIONS["INITIAL_POINTS"] = cOpt("debug", _("Initial points"),
-                                     _("Initial points available on character generation."),
-                                     0, 1000, 6
-                                    );
+    OPTIONS["INITIAL_STAT_POINTS"] = cOpt("debug", _("Initial stat points"),
+                                          _("Initial points available to spend on stats on character generation."),
+                                          0, 1000, 2
+                                         );
+
+    OPTIONS["INITIAL_TRAIT_POINTS"] = cOpt("debug", _("Initial trait points"),
+                                           _("Initial points available to spend on traits on character generation."),
+                                           0, 1000, 2
+                                          );
+
+    OPTIONS["INITIAL_SKILL_POINTS"] = cOpt("debug", _("Initial skill points"),
+                                           _("Initial points available to spend on skills on character generation."),
+                                           0, 1000, 2
+                                           );
 
     OPTIONS["MAX_TRAIT_POINTS"] = cOpt("debug", _("Maximum trait points"),
                                        _("Maximum trait points available for character generation."),
@@ -1126,15 +1228,14 @@ void options_manager::init()
                                  _("Set the level of skill rust. Vanilla: Vanilla Cataclysm - Capped: Capped at skill levels 2 - Int: Intelligence dependent - IntCap: Intelligence dependent, capped - Off: None at all."),
                                  "vanilla,capped,int,intcap,off", "int"
                                 );
-/*
-    // Disabled for now
+
+
     mOptionsSort["debug"]++;
 
     OPTIONS["FOV_3D"] = cOpt("debug", _("Experimental 3D Field of Vision"),
                                  _("If false, vision is limited to current z-level. If true and the world is in z-level mode, the vision will extend beyond current z-level. Currently very bugged!"),
                                  false
                                 );
-*/
 
     ////////////////////////////WORLD DEFAULT////////////////////
     optionNames["no"] = _("No");
@@ -1304,6 +1405,65 @@ void options_manager::init()
     }
 }
 
+#ifdef TILES
+// Helper method to isolate #ifdeffed tiles code.
+static void refresh_tiles( bool used_tiles_changed, bool pixel_minimap_height_changed, bool ingame )
+{
+    if( used_tiles_changed ) {
+        //try and keep SDL calls limited to source files that deal specifically with them
+        try {
+            tilecontext->reinit();
+            //g->init_ui is called when zoom is changed
+            g->reset_zoom();
+            if( ingame ) {
+                if( g->pixel_minimap_option ) {
+                    wrefresh(g->w_pixel_minimap);
+                }
+                g->refresh_all();
+            }
+            tilecontext->do_tile_loading_report();
+        } catch( const std::exception &err ) {
+            popup( _( "Loading the tileset failed: %s" ), err.what() );
+            use_tiles = false;
+        }
+    } else if( ingame && g->pixel_minimap_option && pixel_minimap_height_changed ) {
+        tilecontext->reinit_minimap();
+        g->init_ui();
+        wrefresh( g->w_pixel_minimap );
+        g->refresh_all();
+    }
+}
+#else
+static void refresh_tiles( bool, bool, bool ) {
+}
+#endif // TILES
+
+void draw_borders_external( WINDOW *w, int horizontal_level, std::map<int, bool> &mapLines )
+{
+    draw_border( w, BORDER_COLOR, _( " OPTIONS " ) );
+    // intersections
+    mvwputch( w, horizontal_level, 0, BORDER_COLOR, LINE_XXXO ); // |-
+    mvwputch( w, horizontal_level, getmaxx( w ) - 1, BORDER_COLOR, LINE_XOXX ); // -|
+    for( auto &mapLine : mapLines ) {
+        mvwputch( w, getmaxy( w ) - 1, mapLine.first + 1, BORDER_COLOR, LINE_XXOX ); // _|_
+    }
+    wrefresh( w );
+}
+
+void draw_borders_internal( WINDOW *w, std::map<int, bool> &mapLines )
+{
+    for( int i = 0; i < getmaxx( w ); ++i ) {
+        if( mapLines[i] ) {
+            // intersection
+            mvwputch( w, 0, i, BORDER_COLOR, LINE_OXXX );
+        } else {
+            // regular line
+            mvwputch( w, 0, i, BORDER_COLOR, LINE_OXOX );
+        }
+    }
+    wrefresh( w );
+}
+
 void options_manager::show(bool ingame)
 {
     auto OPTIONS_OLD = OPTIONS;
@@ -1331,27 +1491,8 @@ void options_manager::show(bool ingame)
     WINDOW *w_options = newwin(iContentHeight, FULL_SCREEN_WIDTH - 2,
                                iTooltipHeight + 2 + iOffsetY, 1 + iOffsetX);
 
-    draw_border(w_options_border);
-    mvwputch(w_options_border, iTooltipHeight + 1,  0, BORDER_COLOR, LINE_XXXO); // |-
-    mvwputch(w_options_border, iTooltipHeight + 1, 79, BORDER_COLOR, LINE_XOXX); // -|
-
-    for( auto &mapLine : mapLines ) {
-        mvwputch( w_options_border, FULL_SCREEN_HEIGHT - 1, mapLine.first + 1, BORDER_COLOR,
-                  LINE_XXOX ); // _|_
-    }
-
-    mvwprintz(w_options_border, 0, 36, c_ltred, _(" OPTIONS "));
-    wrefresh(w_options_border);
-
-    for (int i = 0; i < 78; i++) {
-        if (mapLines[i]) {
-            mvwputch(w_options_header, 0, i, BORDER_COLOR, LINE_OXXX);
-        } else {
-            mvwputch(w_options_header, 0, i, BORDER_COLOR, LINE_OXOX); // Draw header line
-        }
-    }
-
-    wrefresh(w_options_header);
+    draw_borders_external( w_options_border, iTooltipHeight + 1, mapLines );
+    draw_borders_internal( w_options_header, mapLines );
 
     int iCurrentPage = 0;
     int iLastPage = 0;
@@ -1567,6 +1708,9 @@ void options_manager::show(bool ingame)
                     }
                 }
             }
+        } else if( action == "HELP_KEYBINDINGS" ) {
+            // keybinding screen erased the internal borders of main menu, restore it:
+            draw_borders_internal( w_options_header, mapLines );
         } else if (action == "QUIT") {
             break;
         }
@@ -1577,6 +1721,7 @@ void options_manager::show(bool ingame)
     bool world_options_changed = false;
     bool lang_changed = false;
     bool used_tiles_changed = false;
+    bool pixel_minimap_height_changed = false;
 
     for (auto &iter : OPTIONS_OLD) {
         if ( iter.second.getValue() != OPTIONS[iter.first].getValue() ) {
@@ -1584,6 +1729,10 @@ void options_manager::show(bool ingame)
 
             if ( iter.second.getPage() == "world_default" ) {
                 world_options_changed = true;
+            }
+
+            if ( iter.first == "PIXEL_MINIMAP_HEIGHT" || iter.first == "PIXEL_MINIMAP_RATIO" ) {
+                pixel_minimap_height_changed = true;
             }
 
             if ( iter.first == "TILES" || iter.first == "USE_TILES" ) {
@@ -1594,10 +1743,19 @@ void options_manager::show(bool ingame)
             }
         }
     }
+    for( auto &iter : WOPTIONS_OLD ) {
+        if( iter.second.getValue() != ACTIVE_WORLD_OPTIONS[iter.first].getValue() ) {
+            options_changed = true;
+            world_options_changed = true;
+        }
+    }
 
     if (options_changed) {
         if(query_yn(_("Save changes?"))) {
             save(ingame && world_options_changed);
+            if( world_options_changed ) {
+                world_generator->save_world( world_generator->active_world, false );
+            }
         } else {
             used_tiles_changed = false;
             OPTIONS = OPTIONS_OLD;
@@ -1612,23 +1770,9 @@ void options_manager::show(bool ingame)
         g->mmenu_refresh_motd();
         g->mmenu_refresh_credits();
     }
-    if( used_tiles_changed ) {
-#ifdef TILES
-        //try and keep SDL calls limited to source files that deal specifically with them
-        try {
-            tilecontext->reinit();
-            //g->init_ui is called when zoom is changed
-            g->reset_zoom();
-            if( ingame ) {
-                g->refresh_all();
-                tilecontext->do_tile_loading_report();
-            }
-        } catch( const std::exception &err ) {
-            popup(_("Loading the tileset failed: %s"), err.what());
-            use_tiles = false;
-        }
-#endif // TILES
-    }
+
+    refresh_tiles( used_tiles_changed, pixel_minimap_height_changed, ingame );
+
     delwin(w_options);
     delwin(w_options_border);
     delwin(w_options_header);
@@ -1688,30 +1832,13 @@ bool options_manager::save(bool ingame)
     trigdist = OPTIONS["CIRCLEDIST"]; // update trigdist as well
     use_tiles = OPTIONS["USE_TILES"]; // and use_tiles
     log_from_top = OPTIONS["SIDEBAR_LOG_FLOW"] == "new_top"; // cache to global due to heavy usage.
-    fov_3d = false; // OPTIONS["FOV_3D"];
+    message_ttl = OPTIONS["MESSAGE_TTL"]; // cache to global due to heavy usage.
+    fov_3d = OPTIONS["FOV_3D"];
 
-    try {
-        std::ofstream fout;
-        fout.exceptions(std::ios::badbit | std::ios::failbit);
-
-        fout.open(savefile.c_str());
-
-        if(!fout.is_open()) {
-            return true; //trick game into thinking it was saved
-        }
-
+    return write_to_file( savefile, [&]( std::ostream &fout ) {
         JsonOut jout( fout, true );
         serialize(jout);
-
-        fout.close();
-        return true;
-
-    } catch(std::ios::failure &) {
-        popup(_("Failed to save options to %s"), savefile.c_str());
-        return false;
-    }
-
-    return false;
+    }, _( "options" ) );
 }
 
 void options_manager::load()
@@ -1742,7 +1869,8 @@ void options_manager::load()
     trigdist = OPTIONS["CIRCLEDIST"]; // cache to global due to heavy usage.
     use_tiles = OPTIONS["USE_TILES"]; // cache to global due to heavy usage.
     log_from_top = OPTIONS["SIDEBAR_LOG_FLOW"] == "new_top"; // cache to global due to heavy usage.
-    fov_3d = false; // OPTIONS["FOV_3D"];
+    message_ttl = OPTIONS["MESSAGE_TTL"]; // cache to global due to heavy usage.
+    fov_3d = OPTIONS["FOV_3D"];
 }
 
 bool options_manager::load_legacy()
@@ -1782,10 +1910,4 @@ bool options_manager::load_legacy()
 bool use_narrow_sidebar()
 {
     return TERMY < 25 || g->narrow_sidebar;
-}
-
-inline std::string trim(const std::string &s)
-{
-   auto wsfront = std::find_if_not( s.begin(), s.end(), []( int c ) { return std::isspace( c ); });
-   return std::string( wsfront, std::find_if_not( s.rbegin(), std::string::const_reverse_iterator( wsfront ), []( int c ){ return std::isspace( c ); }).base());
 }

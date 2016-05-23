@@ -11,10 +11,13 @@
 #include <map>
 #include <unordered_map>
 
+class vitamin;
+using vitamin_id = string_id<vitamin>;
 class martialart;
 using matype_id = string_id<martialart>;
 struct dream;
 struct mutation_branch;
+class item;
 
 extern std::vector<dream> dreams;
 extern std::map<std::string, std::vector<std::string> > mutations_category;
@@ -44,6 +47,12 @@ struct mutation_branch {
     bool mixed_effect  = false;
     bool startingtrait = false;
     bool activated     = false;
+    // Should it activate as soon as it is gained?
+    bool starts_active = false;
+    // Should it destroy gear on restricted body parts? (otherwise just pushes it off)
+    bool destroys_gear = false;
+    // Allow soft (fabric) gear on restricted body parts
+    bool allow_soft_gear  = false;
     // IF any of the three are true, it drains that as the "cost"
     bool fatigue       = false;
     bool hunger        = false;
@@ -55,6 +64,14 @@ struct mutation_branch {
     int cost       = 0;
     // costs are consumed consumed every cooldown turns,
     int cooldown   = 0;
+    // bodytemp elements:
+    int bodytemp_min = 0;
+    int bodytemp_max = 0;
+    int bodytemp_sleep = 0;
+
+    /** Mutations may adjust one or more of the default vitamin usage rates */
+    std::map<vitamin_id, int> vitamin_rates;
+
     std::vector<std::string> prereqs; // Prerequisites; Only one is required
     std::vector<std::string> prereqs2; // Prerequisites; need one from here too
     std::vector<std::string> threshreq; // Prerequisites; dedicated slot to needing thresholds
@@ -62,7 +79,13 @@ struct mutation_branch {
     std::vector<std::string> replacements; // Mutations that replace this one
     std::vector<std::string> additions; // Mutations that add to this one
     std::vector<std::string> category; // Mutation Categories
+    std::set<std::string> flags; // Mutation flags
     std::map<body_part, tripoint> protection; // Mutation wet effects
+    std::map<body_part, int> encumbrance_always; // Mutation encumbrance that always applies
+    // Mutation encumbrance that applies when covered with unfitting item
+    std::map<body_part, int> encumbrance_covered;
+    // Body parts that now need OVERSIZE gear
+    std::set<body_part> restricts_gear;
     /** Key pair is <active: bool, mod type: "STR"> */
     std::unordered_map<std::pair<bool, std::string>, int> mods; // Mutation stat mods
     std::vector<matype_id>
@@ -73,6 +96,10 @@ struct mutation_branch {
      * Returns the color to display the mutation name with.
      */
     nc_color get_display_color() const;
+    /**
+     * Returns true if a character with this mutation shouldn't be able to wear given item.
+     */
+    bool conflicts_with_item( const item &it ) const;
     /**
      * Check whether the given id is a valid mutation id (refers to a known mutation).
      */

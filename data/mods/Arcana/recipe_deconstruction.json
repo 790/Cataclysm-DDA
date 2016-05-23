@@ -8,7 +8,7 @@
   "difficulty": 0,
   "time": 100,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "components": [ [ [ "paper", 5 ] ] ]
 },{
   "type" : "recipe",
@@ -19,8 +19,8 @@
   "difficulty": 0,
   "time": 600,
   "reversible": true,
-  "autolearn": false,
-  "qualities":[ {"id":"HAMMER","level":1,"amount":1} ],
+  "flags": ["BLIND_EASY"],
+  "qualities":[ {"id":"HAMMER","level":1} ],
   "components": [ [ [ "silver_small", 95 ] ] ]
 },{
   "type" : "recipe",
@@ -32,7 +32,7 @@
   "difficulty": 3,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_HARD"],
   "tools": [ [ [ "hexenhammer", -1 ] ]
   ],
   "components": [ [ [ "essence_dull", 15 ] ] ]
@@ -46,7 +46,7 @@
   "difficulty": 1,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_HARD"],
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [ [ [ "essence_dull", 5 ] ] ]
 },{
@@ -59,7 +59,6 @@
   "difficulty": 4,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "gold_small", 625 ] ],
@@ -75,8 +74,7 @@
   "difficulty": 7,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
-  "qualities" : [{"id":"CUT","level":1,"amount":1}],
+  "qualities" : [{"id":"CUT","level":1}],
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "rag", 19 ] ],
@@ -93,7 +91,6 @@
   "difficulty": 5,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "scrap", 6 ] ],
@@ -109,7 +106,6 @@
   "difficulty": 7,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "gold_small", 625 ] ],
@@ -126,7 +122,6 @@
   "difficulty": 2,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 165 ] ],
@@ -142,8 +137,7 @@
   "difficulty": 3,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
-  "qualities" : [{"id":"CUT","level":1,"amount":1}],
+  "qualities" : [{"id":"CUT","level":1}],
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "leather", 42 ] ],
@@ -159,7 +153,6 @@
   "difficulty": 4,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 600 ] ],
@@ -176,7 +169,6 @@
   "difficulty": 5,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -192,7 +184,6 @@
   "difficulty": 5,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -208,7 +199,6 @@
   "difficulty": 6,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -224,7 +214,6 @@
   "difficulty": 6,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -240,7 +229,6 @@
   "difficulty": 7,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -256,7 +244,6 @@
   "difficulty": 7,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -272,7 +259,6 @@
   "difficulty": 8,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -288,7 +274,6 @@
   "difficulty": 8,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -304,7 +289,6 @@
   "difficulty": 9,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -320,7 +304,6 @@
   "difficulty": 9,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "silver_small", 95 ] ],
@@ -336,7 +319,6 @@
   "difficulty": 4,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "scrap", 12 ] ],
@@ -352,7 +334,6 @@
   "difficulty": 6,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
   "tools": [ [ [ "hexenhammer", -1 ] ] ],
   "components": [
     [ [ "scrap", 10 ] ],
@@ -369,7 +350,7 @@
   "difficulty": 2,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "fire", -1 ] ]
@@ -387,7 +368,7 @@
   "difficulty": 2,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "fire", -1 ] ]
@@ -405,7 +386,7 @@
   "difficulty": 3,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "fire", -1 ] ]
@@ -423,7 +404,7 @@
   "difficulty": 3,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "fire", -1 ] ]
@@ -441,7 +422,7 @@
   "difficulty": 4,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "fire", -1 ] ]
@@ -459,7 +440,7 @@
   "difficulty": 4,
   "time": 50000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "fire", -1 ] ]
@@ -477,7 +458,7 @@
   "difficulty": 10,
   "time": 100000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "book_hexenhammer", -1 ] ],
@@ -494,7 +475,7 @@
   "difficulty": 10,
   "time": 100000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "book_hexenhammer", -1 ] ],
@@ -511,7 +492,7 @@
   "difficulty": 10,
   "time": 100000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "book_hexenhammer", -1 ] ],
@@ -530,7 +511,7 @@
   "difficulty": 10,
   "time": 100000,
   "reversible": true,
-  "autolearn": false,
+  "flags": ["BLIND_EASY"],
   "tools": [
     [ [ "hexenhammer", -1 ] ],
     [ [ "book_hexenhammer", -1 ] ],

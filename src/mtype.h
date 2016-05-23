@@ -7,6 +7,7 @@
 #include "color.h"
 #include "int_id.h"
 #include "string_id.h"
+#include "damage.h"
 
 #include <bitset>
 #include <string>
@@ -17,7 +18,6 @@
 class Creature;
 class monster;
 class monfaction;
-struct projectile;
 struct dealt_projectile_attack;
 struct species_type;
 enum field_id : int;
@@ -33,6 +33,11 @@ struct mtype;
 using mtype_id = string_id<mtype>;
 using mfaction_id = int_id<monfaction>;
 using species_id = string_id<species_type>;
+class effect_type;
+using efftype_id = string_id<effect_type>;
+class JsonArray;
+class material_type;
+using material_id = string_id<material_type>;
 
 typedef std::string itype_id;
 
@@ -115,13 +120,12 @@ enum m_flag : int {
     MF_HUMAN,               // It's a live human, as long as it's alive
     MF_NO_BREATHE,          // Creature can't drown and is unharmed by gas, smoke, or poison
     MF_REGENERATES_50,      // Monster regenerates very quickly over time
-    MF_REGENERATES_10,      // Monster regenerates very quickly over time
+    MF_REGENERATES_10,      // Monster regenerates quickly over time
     MF_FLAMMABLE,           // Monster catches fire, burns, and spreads fire to nearby objects
     MF_REVIVES,             // Monster corpse will revive after a short period of time
     MF_CHITIN,              // May produce chitin when butchered
-    MF_VERMIN,              // Creature is too small for normal combat, butchering, etc.
+    MF_VERMIN,              // Obsolete flag labeling "nuisance" or "scenery" monsters, now used to prevent loading the same.
     MF_NOGIB,               // Creature won't leave gibs / meat chunks when killed with huge damage.
-    MF_HUNTS_VERMIN,        // Creature uses vermin as a food source
     MF_LARVA,               // Creature is a larva. Currently used for gib and blood handling.
     MF_ARTHROPOD_BLOOD,     // Forces monster to bleed hemolymph.
     MF_ACID_BLOOD,          // Makes monster bleed acid. Fun stuff! Does not automatically dissolve in a pool of acid on death.
@@ -141,26 +145,86 @@ enum m_flag : int {
     MF_INTERIOR_AMMO,       // Monster contain's its ammo inside itself, no need to load on launch. Prevents ammo from being dropped on disable.
     MF_CLIMBS,              // Monsters that can climb certain terrain and furniture
     MF_PUSH_MON,            // Monsters that can push creatures out of their way
-    MF_NIGHT_INVISIBILITY,     // Monsters that are invisible in poor light conditions
+    MF_NIGHT_INVISIBILITY,  // Monsters that are invisible in poor light conditions
+    MF_REVIVES_HEALTHY,     // When revived, this monster has full hitpoints and speed
+    MF_NO_NECRO,            // This monster can't be revived by necros. It will still rise on its own.
     MF_MAX                  // Sets the length of the flags - obviously must be LAST
 };
 
 /** Used to store monster effects placed on attack */
 struct mon_effect_data
 {
-    std::string id;
+    efftype_id id;
     int duration;
     body_part bp;
     bool permanent;
     int chance;
 
-    mon_effect_data(std::string nid, int dur, body_part nbp, bool perm, int nchance) :
+    mon_effect_data(const efftype_id &nid, int dur, body_part nbp, bool perm, int nchance) :
                     id(nid), duration(dur), bp(nbp), permanent(perm), chance(nchance) {};
 };
 
+class mattack_actor {
+protected:
+    mattack_actor() { }
+public:
+    virtual ~mattack_actor() { }
+    virtual bool call( monster & ) const = 0;
+    virtual mattack_actor *clone() const = 0;
+};
+
 struct mtype_special_attack {
-    mon_action_attack attack = nullptr; // function pointer to the attack function
-    int cooldown = 0; // turns between uses of this attack
+protected:
+    enum attack_function_t : int {
+        ATTACK_NONE,
+        ATTACK_CPP,
+        ATTACK_ACTOR_PTR
+    };
+
+    attack_function_t function_type;
+
+    union {
+        mon_action_attack cpp_function;
+        mattack_actor *actor_ptr;
+    };
+
+    int cooldown;
+
+public:
+    mtype_special_attack( int cool = 0 )
+        : function_type(ATTACK_NONE), cooldown( cool )
+    { }
+
+    mtype_special_attack( mon_action_attack f, int cool )
+        : function_type(ATTACK_CPP), cpp_function(f), cooldown(cool)
+    { }
+
+    mtype_special_attack( mattack_actor *f, int cool )
+        : function_type(ATTACK_ACTOR_PTR), actor_ptr(f), cooldown(cool)
+    { }
+
+    mtype_special_attack( const mtype_special_attack &other );
+
+    ~mtype_special_attack();
+
+    void operator=( const mtype_special_attack &other );
+
+    bool call( monster & ) const;
+
+    int get_cooldown() const
+    {
+        return cooldown;
+    }
+
+    void set_cooldown( int i );
+
+    const mattack_actor *get_actor_ptr() const
+    {
+        if( function_type != ATTACK_ACTOR_PTR ) {
+            return nullptr;
+        }
+        return actor_ptr;
+    }
 };
 
 struct mtype {
@@ -170,8 +234,18 @@ struct mtype {
         std::string name_plural;
 
         std::set< const species_type* > species_ptrs;
+
+        void add_special_attacks( JsonObject &jo, const std::string &member_name );
+        void remove_special_attacks( JsonObject &jo, const std::string &member_name );
+
+        void add_special_attack( JsonArray jarr );
+        void add_special_attack( JsonObject jo );
+
     public:
         mtype_id id;
+        // TODO: maybe make this private as well? It must be set to `true` only once,
+        // and must never be set back to `false`.
+        bool was_loaded = false;
         std::string description;
         std::set<species_id> species;
         std::set<std::string> categories;
@@ -180,7 +254,7 @@ struct mtype {
         std::string sym;
         nc_color color;
         m_size size;
-        std::vector<std::string> mat;
+        std::vector<material_id> mat;
         phase_id phase;
         std::set<m_flag> flags;
         std::set<monster_trigger> anger, placate, fear;
@@ -202,20 +276,23 @@ struct mtype {
         int  speed;       // Speed; human = 100
         // Number of moves per regular attack.
         int attack_cost;
+        damage_instance melee_damage; // Basic melee attack damage
         unsigned char melee_skill; // Melee hit skill, 20 is superhuman hitting abilities.
-        unsigned char melee_dice;  // Number of dice on melee hit
+        unsigned char melee_dice;  // Number of dice of bonus bashing damage on melee hit
         unsigned char melee_sides; // Number of sides those dice have
-        unsigned char melee_cut;   // Bonus cutting damage
         unsigned char sk_dodge;    // Dodge skill; should be 0 to 5
         unsigned char armor_bash;  // Natural armor vs. bash
         unsigned char armor_cut;   // Natural armor vs. cut
+        unsigned char armor_stab;  // Natural armor vs. stabbing
+        unsigned char armor_acid;  // Natural armor vs. acid
+        unsigned char armor_fire;  // Natural armor vs. fire
         std::map<std::string, int> starting_ammo; // Amount of ammo the monster spawns with.
         // Name of item group that is used to create item dropped upon death, or empty.
         std::string death_drops;
         float luminance;           // 0 is default, >0 gives luminance to lightmap
         int hp;
         // special attack frequencies and function pointers
-        std::unordered_map<std::string, mtype_special_attack> special_attacks;
+        std::map<std::string, mtype_special_attack> special_attacks;
         std::vector<std::string> special_attacks_names; // names of attacks, in json load order
 
         unsigned int def_chance; // How likely a special "defensive" move is to trigger (0-100%, default 0)
@@ -231,6 +308,7 @@ struct mtype {
         int half_life;
         mtype_id upgrade_into;
         mongroup_id upgrade_group;
+        mtype_id burn_into;
         // Default constructor
         mtype ();
         /**
@@ -250,7 +328,7 @@ struct mtype {
         bool has_special_attack( const std::string &attack_name ) const;
         bool has_flag(m_flag flag) const;
         bool has_flag(std::string flag) const;
-        bool has_material( const std::string &material ) const;
+        bool made_of( const material_id &material ) const;
         void set_flag(std::string flag, bool state);
         bool has_anger_trigger(monster_trigger trigger) const;
         bool has_fear_trigger(monster_trigger trigger) const;
@@ -264,6 +342,9 @@ struct mtype {
         // The item id of the meat items that are produced by this monster (or "null")
         // if there is no matching item type. e.g. "veggy" for plant monsters.
         itype_id get_meat_itype() const;
+
+        // Historically located in monstergenerator.cpp
+        void load( JsonObject &jo );
 };
 
 #endif

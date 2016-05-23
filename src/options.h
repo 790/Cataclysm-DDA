@@ -12,22 +12,26 @@ class options_data
 {
         friend struct regional_settings;
     public:
-        void add_retry(const std::string &var, const std::string &val);
-        void add_value(const std::string &myoption, const std::string &myval, std::string myvaltxt = "" );
+        void add_retry( const std::string &var, const std::string &val );
+        void add_value( const std::string &myoption, const std::string &myval, std::string myvaltxt = "" );
         options_data();
     private:
-        void enable_json(const std::string &var);
+        void enable_json( const std::string &var );
         std::map<std::string, std::string> post_json_verify;
 };
 
 extern options_data optionsdata;
 
-class options_manager : public JsonSerializer, public JsonDeserializer {
+class options_manager : public JsonSerializer, public JsonDeserializer
+{
     private:
         static std::string build_tilesets_list();
         static std::string build_soundpacks_list();
         bool bIngame;
 
+        bool load_legacy();
+
+    public:
         enum copt_hide_t {
             /** Don't hide this option */
             COPT_NO_HIDE,
@@ -41,9 +45,6 @@ class options_manager : public JsonSerializer, public JsonDeserializer {
             COPT_NO_SOUND_HIDE
         };
 
-        bool load_legacy();
-
-    public:
         class cOpt
         {
                 friend class options_data;
@@ -52,29 +53,35 @@ class options_manager : public JsonSerializer, public JsonDeserializer {
                 cOpt();
 
                 //string select constructor
-                cOpt(const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
-                     const std::string sItemsIn, std::string sDefaultIn, copt_hide_t opt_hide = COPT_NO_HIDE);
+                cOpt( const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
+                      const std::string sItemsIn, std::string sDefaultIn, copt_hide_t opt_hide = COPT_NO_HIDE );
 
                 //string input constructor
-                cOpt(const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
-                    const std::string sDefaultIn, const int iMaxLengthIn, copt_hide_t opt_hide = COPT_NO_HIDE);
+                cOpt( const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
+                      const std::string sDefaultIn, const int iMaxLengthIn, copt_hide_t opt_hide = COPT_NO_HIDE );
 
                 //bool constructor
-                cOpt(const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
-                     const bool bDefaultIn, copt_hide_t opt_hide = COPT_NO_HIDE);
+                cOpt( const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
+                      const bool bDefaultIn, copt_hide_t opt_hide = COPT_NO_HIDE );
 
                 //int constructor
-                cOpt(const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
-                     const int iMinIn, int iMaxIn, int iDefaultIn, copt_hide_t opt_hide = COPT_NO_HIDE);
+                cOpt( const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
+                      const int iMinIn, int iMaxIn, int iDefaultIn, copt_hide_t opt_hide = COPT_NO_HIDE );
+
+                //int map constructor
+                cOpt( const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
+                      const std::map<int, std::string> mIntValuesIn, int iInitialIn, int iDefaultIn,
+                      copt_hide_t opt_hide = COPT_NO_HIDE );
 
                 //float constructor
-                cOpt(const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
-                     const float fMinIn, float fMaxIn, float fDefaultIn, float fStepIn, copt_hide_t opt_hide = COPT_NO_HIDE);
+                cOpt( const std::string sPageIn, const std::string sMenuTextIn, const std::string sTooltipIn,
+                      const float fMinIn, float fMaxIn, float fDefaultIn, float fStepIn,
+                      copt_hide_t opt_hide = COPT_NO_HIDE );
 
                 //Default deconstructor
                 ~cOpt() {};
 
-                void setSortPos(const std::string sPageIn);
+                void setSortPos( const std::string sPageIn );
 
                 //helper functions
                 int getSortPos();
@@ -92,9 +99,9 @@ class options_manager : public JsonSerializer, public JsonDeserializer {
 
                 std::string getValue();
                 std::string getValueName();
-                std::string getDefaultText(const bool bTranslated = true);
+                std::string getDefaultText( const bool bTranslated = true );
 
-                int getItemPos(const std::string sSearch);
+                int getItemPos( const std::string sSearch );
 
                 int getMaxLength();
 
@@ -103,8 +110,8 @@ class options_manager : public JsonSerializer, public JsonDeserializer {
                 //set to prev item
                 void setPrev();
                 //set value
-                void setValue(std::string sSetIn);
-                void setValue(float fSetIn);
+                void setValue( std::string sSetIn );
+                void setValue( float fSetIn );
 
                 //Set default class behaviour to float
                 operator float() const;
@@ -113,9 +120,9 @@ class options_manager : public JsonSerializer, public JsonDeserializer {
                 //allow (explicit) boolean conversions
                 explicit operator bool() const;
                 // if (class == "string")
-                bool operator==(const std::string sCompare) const;
+                bool operator==( const std::string sCompare ) const;
                 // if (class != "string")
-                bool operator!=(const std::string sCompare) const;
+                bool operator!=( const std::string sCompare ) const;
 
             private:
                 std::string sPage;
@@ -142,6 +149,7 @@ class options_manager : public JsonSerializer, public JsonDeserializer {
                 int iMin;
                 int iMax;
                 int iDefault;
+                std::map<int, std::string> mIntValues;
 
                 //sType == "float"
                 float fSet;
@@ -153,12 +161,12 @@ class options_manager : public JsonSerializer, public JsonDeserializer {
 
         void init();
         void load();
-        bool save(bool ingame = false);
-        void show(bool ingame = false);
+        bool save( bool ingame = false );
+        void show( bool ingame = false );
 
         using JsonSerializer::serialize;
-        void serialize(JsonOut &json) const override;
-        void deserialize(JsonIn &jsin) override;
+        void serialize( JsonOut &json ) const override;
+        void deserialize( JsonIn &jsin ) override;
 };
 
 bool use_narrow_sidebar(); // short-circuits to on if terminal is too small
@@ -179,5 +187,5 @@ extern std::map<int, std::vector<std::string> > mPageItems;
 extern int iWorldOptPage;
 
 options_manager &get_options();
-std::string trim(const std::string &s); // Remove spaces from the start and the end of a string
+
 #endif

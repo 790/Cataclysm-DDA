@@ -127,73 +127,13 @@ inventory inventory::operator+ (const item &rhs)
     return inventory(*this) += rhs;
 }
 
-/*static*/ bool inventory::has_activation(const item &it, const player &u)
-{
-    return u.rate_action_use( it ) != HINT_CANT;
-}
-
-/*static*/ bool inventory::has_capacity_for_liquid(const item &it, const item &liquid)
-{
-    return (it.get_remaining_capacity_for_liquid(liquid) > 0);
-}
-
-indexed_invslice inventory::slice_filter()
+indexed_invslice inventory::indexed_slice_filter_by( item_filter filter ) const
 {
     int i = 0;
     indexed_invslice stacks;
     for( auto &elem : items ) {
-        stacks.push_back( std::make_pair( &elem, i ) );
-        ++i;
-    }
-    return stacks;
-}
-
-indexed_invslice inventory::slice_filter_by_activation(const player &u)
-{
-    int i = 0;
-    indexed_invslice stacks;
-    for( auto &elem : items ) {
-        if( has_activation( elem.front(), u ) ) {
-            stacks.push_back( std::make_pair( &elem, i ) );
-        }
-        ++i;
-    }
-    return stacks;
-}
-
-indexed_invslice inventory::slice_filter_by_flag(const std::string flag)
-{
-    int i = 0;
-    indexed_invslice stacks;
-    for( auto &elem : items ) {
-        if( elem.front().has_flag( flag ) ) {
-            stacks.push_back( std::make_pair( &elem, i ) );
-        }
-        ++i;
-    }
-    return stacks;
-}
-
-indexed_invslice inventory::slice_filter_by_capacity_for_liquid(const item &liquid)
-{
-    int i = 0;
-    indexed_invslice stacks;
-    for( auto &elem : items ) {
-        if( has_capacity_for_liquid( elem.front(), liquid ) ) {
-            stacks.push_back( std::make_pair( &elem, i ) );
-        }
-        ++i;
-    }
-    return stacks;
-}
-
-indexed_invslice inventory::slice_filter_by_salvageability(const salvage_actor &actor)
-{
-    int i = 0;
-    indexed_invslice stacks;
-    for( auto &elem : items ) {
-        if( actor.valid_to_cut_up( &elem.front() ) ) {
-            stacks.push_back( std::make_pair( &elem, i ) );
+        if( filter( elem.front() ) ) {
+            stacks.emplace_back( const_cast<std::list<item>*>( &elem ), i );
         }
         ++i;
     }
@@ -450,7 +390,7 @@ void inventory::form_from_map( const tripoint &origin, int range, bool assign_in
     for( const tripoint &p : g->m.points_in_radius( origin, range ) ) {
         if (g->m.has_furn( p ) && g->m.accessible_furniture( origin, p, range )) {
             const furn_t &f = g->m.furn_at( p );
-            itype *type = f.crafting_pseudo_item_type();
+            const itype *type = f.crafting_pseudo_item_type();
             if (type != NULL) {
                 item furn_item(type->id, 0);
                 const itype *ammo = f.crafting_ammo_item_type();
@@ -662,7 +602,7 @@ std::list<item> inventory::reduce_stack(const itype_id &type, int quantity)
 
 item inventory::remove_item(const item *it)
 {
-    auto tmp = remove_items_with( [&it] (const item &i) { return &i == it; } );
+    auto tmp = remove_items_with( [&it](const item& i) { return &i == it; }, 1 );
     if( !tmp.empty() ) {
         return tmp.front();
     }
@@ -772,17 +712,14 @@ int inventory::invlet_to_position( char invlet ) const
 
 int inventory::position_by_item( const item *it ) const
 {
-    const auto filter = [it]( const item & i ) {
-        return &i == it;
-    };
-    int i = 0;
-    for( auto &elem : items ) {
-        for( auto &elem_stack_iter : elem ) {
-            if( has_item_with_recursive( elem_stack_iter, filter ) ) {
-                return i;
+    int p = 0;
+    for( const auto &stack : items ) {
+        for( const auto &e : stack ) {
+            if( e.has_item( *it ) ) {
+                return p;
             }
         }
-        ++i;
+        p++;
     }
     return INT_MIN;
 }
@@ -815,7 +752,7 @@ item &inventory::item_or_container(itype_id type)
             if( elem_stack_iter.type->id == type ) {
                 return elem_stack_iter;
             } else if( elem_stack_iter.is_container() && !elem_stack_iter.contents.empty() ) {
-                if( elem_stack_iter.contents[0].type->id == type ) {
+                if( elem_stack_iter.contents.front().typeId() == type ) {
                     return elem_stack_iter;
                 }
             }
@@ -838,33 +775,6 @@ std::vector<std::pair<item *, int> > inventory::all_items_by_type(itype_id type)
         ++i;
     }
     return ret;
-}
-
-int inventory::amount_of(itype_id it) const
-{
-    return amount_of(it, true);
-}
-
-int inventory::amount_of(itype_id it, bool used_as_tool) const
-{
-    int count = 0;
-    for( const auto &elem : items ) {
-        for( const auto &elem_stack_iter : elem ) {
-            count += elem_stack_iter.amount_of( it, used_as_tool );
-        }
-    }
-    return count;
-}
-
-long inventory::charges_of(itype_id it) const
-{
-    int count = 0;
-    for( const auto &elem : items ) {
-        for( const auto &elem_stack_iter : elem ) {
-            count += elem_stack_iter.charges_of( it );
-        }
-    }
-    return count;
 }
 
 std::list<item> inventory::use_amount(itype_id it, int _quantity)
@@ -891,28 +801,6 @@ std::list<item> inventory::use_amount(itype_id it, int _quantity)
     return ret;
 }
 
-std::list<item> inventory::use_charges(itype_id it, long quantity)
-{
-    sort();
-    std::list<item> ret;
-    for (invstack::iterator iter = items.begin(); iter != items.end() && quantity > 0; /* noop */) {
-        for (std::list<item>::iterator stack_iter = iter->begin();
-             stack_iter != iter->end() && quantity > 0; /* noop */) {
-            if (stack_iter->use_charges(it, quantity, ret)) {
-                stack_iter = iter->erase(stack_iter);
-            } else {
-                ++stack_iter;
-            }
-        }
-        if (iter->empty()) {
-            iter = items.erase(iter);
-        } else if (iter != items.end()) {
-            ++iter;
-        }
-    }
-    return ret;
-}
-
 bool inventory::has_tools(itype_id it, int quantity) const
 {
     return has_amount(it, quantity, true);
@@ -923,50 +811,9 @@ bool inventory::has_components(itype_id it, int quantity) const
     return has_amount(it, quantity, false);
 }
 
-bool inventory::has_amount(itype_id it, int quantity) const
-{
-    return has_amount(it, quantity, true);
-}
-
-bool inventory::has_amount(itype_id it, int quantity, bool used_as_tool) const
-{
-    return (amount_of(it, used_as_tool) >= quantity);
-}
-
 bool inventory::has_charges(itype_id it, long quantity) const
 {
     return (charges_of(it) >= quantity);
-}
-
-bool inventory::has_item( const item *it ) const
-{
-    return has_item_with( [&it]( const item & i ) {
-        return &i == it;
-    } );
-}
-
-bool inventory::has_items_with_quality(std::string id, int level, int amount) const
-{
-    int found = 0;
-    for( const auto &elem : items ) {
-        for( const auto &elem_stack_iter : elem ) {
-            if( !elem_stack_iter.contents.empty() && elem_stack_iter.is_container() ) {
-                continue;
-            }
-            if( elem_stack_iter.has_quality( id, level ) ) {
-                if( elem_stack_iter.count_by_charges() ) {
-                    found += elem_stack_iter.charges;
-                } else {
-                    found++;
-                }
-            }
-        }
-    }
-    if(found >= amount) {
-        return true;
-    } else {
-        return false;
-    }
 }
 
 int inventory::leak_level(std::string flag) const
@@ -985,18 +832,6 @@ int inventory::leak_level(std::string flag) const
         }
     }
     return ret;
-}
-
-int inventory::butcher_factor() const
-{
-    int result = INT_MIN;
-    for( const auto &elem : items ) {
-        for( const auto &cur_item : elem ) {
-
-            result = std::max( result, cur_item.butcher_factor() );
-        }
-    }
-    return result;
 }
 
 int inventory::worst_item_value(npc *p) const
@@ -1071,9 +906,23 @@ item *inventory::most_loaded_gun()
     item *ret = &nullitem;
     int max = 0;
     for( auto &elem : items ) {
-        if( elem.front().is_gun() && elem.front().charges > max ) {
-            ret = &( elem.front() );
-            max = ret->charges;
+        item &gun = elem.front();
+        if( !gun.is_gun() ) {
+            continue;
+        }
+
+        const auto required = gun.ammo_required();
+        int cur = 0;
+        if( required <= 0 ) {
+            // Arbitrary
+            cur = 5;
+        } else {
+            cur = gun.ammo_remaining() / required;
+        }
+
+        if( cur > max ) {
+            ret = &gun;
+            max = cur;
         }
     }
     return ret;
@@ -1083,7 +932,7 @@ void inventory::rust_iron_items()
 {
     for( auto &elem : items ) {
         for( auto &elem_stack_iter : elem ) {
-            if( elem_stack_iter.made_of( "iron" ) &&
+            if( elem_stack_iter.made_of( material_id( "iron" ) ) &&
                 !elem_stack_iter.has_flag( "WATERPROOF_GUN" ) &&
                 !elem_stack_iter.has_flag( "WATERPROOF" ) && elem_stack_iter.damage < 5 &&
                 one_in( 500 ) ) {
@@ -1123,7 +972,7 @@ std::vector<item *> inventory::active_items()
             if( ( elem_stack_iter.is_artifact() && elem_stack_iter.is_tool() ) ||
                 elem_stack_iter.active ||
                 ( elem_stack_iter.is_container() && !elem_stack_iter.contents.empty() &&
-                  elem_stack_iter.contents[0].active ) ) {
+                  elem_stack_iter.contents.front().active ) ) {
                 ret.push_back( &elem_stack_iter );
             }
         }
@@ -1136,7 +985,7 @@ void inventory::assign_empty_invlet(item &it, bool force)
     if( !OPTIONS["AUTO_INV_ASSIGN"] ) {
         return;
     }
-    
+
     player *p = &(g->u);
     std::set<char> cur_inv = p->allocated_invlets();
     itype_id target_type = it.typeId();

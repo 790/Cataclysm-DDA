@@ -1,19 +1,16 @@
-#include <string>
-#include <iostream>
-#include <iterator>
-#include <sstream>
-#include <fstream>
-#include <map>
-#include <vector>
+#include "iuse_software_sokoban.h"
 
 #include "output.h"
 #include "input.h"
 #include "catacharset.h"
-#include "options.h"
 #include "debug.h"
-#include "iuse_software_sokoban.h"
 #include "path_info.h"
 #include "translations.h"
+
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <fstream>
 
 sokoban_game::sokoban_game()
 {
@@ -256,9 +253,7 @@ int sokoban_game::start_game()
 
     WINDOW *w_sokoban = newwin(FULL_SCREEN_HEIGHT, FULL_SCREEN_WIDTH, iOffsetY, iOffsetX);
     WINDOW_PTR w_sokobanptr( w_sokoban );
-    draw_border(w_sokoban);
-    center_print(w_sokoban, 0, hilite(c_white), _("Sokoban"));
-
+    draw_border( w_sokoban, BORDER_COLOR, _( "Sokoban" ), hilite( c_white ) );
     input_context ctxt("SOKOBAN");
     ctxt.register_cardinal();
     ctxt.register_action("NEXT");
